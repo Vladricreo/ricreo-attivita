@@ -33,7 +33,7 @@ export function Popover({
           sideOffset={6}
           collisionPadding={8}
           className={cn(
-            "z-50 max-h-[var(--radix-popover-content-available-height)] w-72 overflow-y-auto rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg outline-none",
+            "z-50 max-h-[var(--radix-popover-content-available-height)] w-72 max-w-[calc(100vw-1rem)] overflow-y-auto rounded-lg border border-border bg-popover p-2 text-popover-foreground shadow-lg outline-none",
             className,
           )}
           onClick={(e) => e.stopPropagation()}

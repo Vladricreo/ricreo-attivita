@@ -25,7 +25,7 @@ export function Menu({
           sideOffset={6}
           collisionPadding={8}
           className={cn(
-            "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[11rem] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg",
+            "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[11rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg",
             className,
           )}
           onClick={(e) => e.stopPropagation()}
@@ -96,7 +96,7 @@ export function SottoMenu({ etichetta, children }: { etichetta: ReactNode; child
         <M.SubContent
           sideOffset={4}
           collisionPadding={8}
-          className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[10rem] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
+          className="z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] min-w-[10rem] max-w-[calc(100vw-1rem)] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-lg"
         >
           {children}
         </M.SubContent>
