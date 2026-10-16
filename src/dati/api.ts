@@ -14,6 +14,7 @@ import type {
   Preferenze,
   Reazione,
   Sollecito,
+  StatoGoogle,
   Sottocategoria,
   Stato,
   Task,
@@ -313,6 +314,21 @@ export function creaApi(sb: SupabaseClient<any, any, any>) {
     },
     async confermaSollecito(id: string): Promise<void> {
       ok(await db().rpc("conferma_sollecito", { p_id: id }))
+    },
+
+    // Google Tasks e Calendar (per persona) ----------------------------------------------------------
+    async statoGoogle(): Promise<StatoGoogle | null> {
+      return ok(await db().rpc("google_stato"), "Errore lettura collegamento Google") as StatoGoogle | null
+    },
+    /** Codice monouso per aprire il consenso Google nell'app che lo gestisce. */
+    async avviaGoogle(ritorno: string, servizi: { tasks: boolean; calendar: boolean }): Promise<string> {
+      return ok(await db().rpc("google_avvia", { p_ritorno: ritorno, p_tasks: servizi.tasks, p_calendar: servizi.calendar }), "Collegamento non avviato") as string
+    },
+    async impostaGoogle(servizi: { tasks?: boolean; calendar?: boolean }): Promise<void> {
+      ok(await db().rpc("google_imposta", { p_tasks: servizi.tasks ?? null, p_calendar: servizi.calendar ?? null }))
+    },
+    async scollegaGoogle(): Promise<void> {
+      ok(await db().rpc("google_scollega"), "Scollegamento non riuscito")
     },
 
     // Impostazioni (admin) ----------------------------------------------------------------------------

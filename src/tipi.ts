@@ -324,6 +324,21 @@ export type Sollecito = {
 }
 
 /** Configurazione passata da ogni app al modulo. */
+/** Collegamento Google della persona (mai i token: li tiene solo il server). */
+export type StatoGoogle = {
+  collegato: boolean
+  email: string | null
+  tasks_attivo: boolean
+  calendar_attivo: boolean
+  tasks_concesso: boolean
+  calendar_concesso: boolean
+  collegato_at: string | null
+  ultimo_sync_at: string | null
+  ultimo_errore: string | null
+  /** App che gestisce il consenso (Finance). */
+  url_app: string | null
+}
+
 export type ConfigAttivita = {
   /** Slug dell'app che monta il modulo (public."RicreoApp".slug): categoria di default e notifiche. */
   app: string
@@ -339,6 +354,11 @@ export type ConfigAttivita = {
   pagine?: { etichetta: string; href: string }[]
   /** Dopo un'azione che avvisa altre persone (es. push immediate dell'app): assegnazioni e messaggi. */
   dopo?: (e: { tipo: "assegnazione" | "messaggio" | "sollecito"; taskId: string; utenti: string[] }) => void
+  /**
+   * Indirizzo dell'app che gestisce il collegamento Google (consenso OAuth e sync): "" = questa app.
+   * Senza, quello di Finance in public."RicreoApp".
+   */
+  collegamentoGoogle?: string
   /** Pezzi specifici dell'app. */
   estensioni?: {
     /** Sezione in fondo al dettaglio (es. Finance: stato del job che fa l'attività). */

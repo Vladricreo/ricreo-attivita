@@ -162,6 +162,38 @@ ok((await come("dario", () => q(`select count(*)::int n from tasks.notifiche whe
 ok((await come("anna", () => errore(() => q(`select tasks.sollecita($1, $2, false)`, [pers, U.dario])))) !== null, "personale non sollecitabile")
 ok((await come("anna", () => q(`select count(*)::int n from tasks.storico where task_id = $1 and azione = 'sollecito'`, [t1])))[0].n === 2, "solleciti nello storico")
 
+console.log("Google Tasks e Calendar")
+ok(!!(await come("dario", () => errore(() => q(`select * from tasks.google_account`)))), "le tabelle Google non si leggono dal browser")
+ok(!!(await come("dario", () => errore(() => q(`select * from tasks.google_attivita($1)`, [U.dario])))), "google_attivita solo per il server")
+const st0 = (await come("dario", () => q(`select tasks.google_stato() s`)))[0].s
+ok(st0.collegato === false && st0.email === null, `stato non collegato (${JSON.stringify(st0)})`)
+ok((await come("dario", () => errore(() => q(`select tasks.google_avvia('javascript:alert(1)')`)))) !== null, "ritorno non http rifiutato")
+ok((await come("dario", () => errore(() => q(`select tasks.google_avvia(null, false, false)`)))) !== null, "almeno un servizio")
+const nonce = (await come("dario", () => q(`select tasks.google_avvia('https://app.example/attivita', true, false) id`)))[0].id
+const rigaNonce = await q(`select utente_id, tasks, calendar from tasks.google_collegamenti where id = $1`, [nonce])
+ok(rigaNonce[0]?.utente_id === U.dario && rigaNonce[0].tasks && !rigaNonce[0].calendar, "codice monouso legato a dario")
+await q(`insert into tasks.google_account (utente_id, google_email, refresh_token, scope, collegato_at) values ($1, 'dario@example.test', 'x', 'openid https://www.googleapis.com/auth/tasks', now())`, [U.dario])
+const st1 = (await come("dario", () => q(`select tasks.google_stato() s`)))[0].s
+ok(st1.collegato && st1.tasks_concesso && !st1.calendar_concesso && !("refresh_token" in st1), "stato collegato senza token")
+await come("elena", () => q(`select tasks.google_imposta(false, false)`))
+ok((await q(`select tasks_attivo from tasks.google_account where utente_id = $1`, [U.dario]))[0].tasks_attivo, "elena non cambia le impostazioni di dario")
+await come("dario", () => q(`select tasks.google_imposta(true, false)`))
+ok(!(await q(`select calendar_attivo from tasks.google_account where utente_id = $1`, [U.dario]))[0].calendar_attivo, "dario spegne Calendar")
+const gT = await come("anna", async () => (await q(`select tasks.crea_task($1) id`, [{
+  titolo: "Fiera", categoria_id: "inventory", scadenza: "2030-05-10", assegnatari: [U.dario],
+  sottotask: [{ titolo: "Stand", assegnatari: [U.dario], scadenza: "2030-05-08" }, { titolo: "Senza data", assegnatari: [U.dario] }],
+}]))[0].id)
+await q(`update public."RicreoApp" set url = 'https://' || slug || '.example'`)
+const comeServer = async (sql, p) => { await db.exec("set role service_role; select set_config('request.jwt.claim.role','service_role',false);"); try { return await q(sql, p) } finally { await db.exec("reset role; select set_config('request.jwt.claim.role','',false);") } }
+const gAtt = await comeServer(`select * from tasks.google_attivita($1) order by scadenza`, [U.dario])
+ok(gAtt.length === 2 && gAtt[0].titolo === "Fiera › Stand" && gAtt[1].task_id === gT && gAtt[1].app_slug === "inventory" && gAtt[1].url_app === "https://inventory.example" && !gAtt[1].fatta,
+  `attività di dario per Google (${JSON.stringify(gAtt.map((r) => [r.titolo, r.app_slug, r.url_app]))})`)
+await come("anna", () => q(`update tasks.task set eliminata_at = now() where id = $1`, [gT]))
+ok((await comeServer(`select * from tasks.google_attivita($1)`, [U.dario])).length === 0, "cestino → fuori da Google (anche le sottotask)")
+await come("dario", () => q(`select tasks.google_scollega()`))
+ok((await q(`select scollegato_at from tasks.google_account where utente_id = $1`, [U.dario]))[0].scollegato_at !== null, "scollega → da ripulire")
+ok((await come("dario", () => q(`select tasks.google_stato() s`)))[0].s.collegato === false, "dopo scollega non risulta collegato")
+
 console.log("Vista app")
 const app = await come("dario", () => q(`select slug from tasks.v_app order by ordine`))
 ok(app.length === 4, `v_app (${app.map((a) => a.slug).join(",")})`)

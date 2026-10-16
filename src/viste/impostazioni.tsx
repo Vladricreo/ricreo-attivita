@@ -3,6 +3,7 @@
 import { Archive, Eye, Plus, RotateCcw, ShieldCheck, Users } from "lucide-react"
 import { useState } from "react"
 import { colore, ELENCO_COLORI } from "../colori"
+import { SezioneGoogle } from "../componenti/google"
 import { AvatarPersona, GruppoAvatar, ScegliPersone } from "../componenti/persone"
 import { useAttivita } from "../contesto"
 import { messaggioErrore } from "../dati/api"
@@ -34,6 +35,8 @@ export function VistaImpostazioni() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      <SezioneGoogle />
+
       <section className="rounded-lg border border-border bg-card p-4">
         <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
           <Eye className="h-4 w-4" /> Chi vede cosa
