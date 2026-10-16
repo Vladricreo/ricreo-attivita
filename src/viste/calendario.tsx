@@ -26,6 +26,7 @@ import {
 import type { Task } from "../tipi"
 import { Bottone } from "../ui/bottone"
 import { cn } from "../ui/cn"
+import { Dialogo } from "../ui/dialogo"
 import { Popover } from "../ui/popover"
 
 type Modo = "mese" | "settimana"
@@ -34,10 +35,10 @@ type Modo = "mese" | "settimana"
 type Voce = { t: Task; da: string; a: string; fantasma: boolean; chiave: string }
 
 const GIORNI = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"]
-/** Righe visibili per settimana nel mese (le altre in "+N altre") e altezza di una riga, in rem. */
-const RIGHE_MESE = 3
-const PASSO_MESE = 1.5
-const PASSO_SETTIMANA = 2.75
+/** Nel mese al massimo 4 righe per settimana (le altre in "+N altre"); spazio per le barre e per il numero del giorno, in rem. */
+const MAX_MESE = 4
+const AREA_MESE = 6.5
+const AREA_SETTIMANA = 26
 const TESTA = 2.25
 
 const maiuscola = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -334,10 +335,17 @@ function Settimana({
     return pos
   }, [voci, inizio, fine])
 
-  const max = alta ? 30 : RIGHE_MESE
-  const passo = alta ? PASSO_SETTIMANA : PASSO_MESE
+  // Le barre si dividono lo spazio del riquadro: una sola è alta (titolo su due righe, avatar sotto),
+  // più sono e più si stringono; oltre il massimo resta "+N altre" che apre il dettaglio del giorno.
+  const corsie = Math.max(0, ...posizionate.map((p) => p.riga + 1))
+  const max = alta ? 30 : corsie > MAX_MESE ? MAX_MESE - 1 : MAX_MESE
+  const righe = Math.min(max, corsie)
+  const area = alta ? AREA_SETTIMANA : corsie > MAX_MESE ? AREA_MESE - 1.5 : AREA_MESE
+  const passo = righe ? Math.min(alta ? 5 : AREA_MESE, Math.max(alta ? 2.75 : 1.5, area / righe)) : 0
   const visibili = posizionate.filter((p) => p.riga < max)
-  const righe = Math.min(max, Math.max(0, ...posizionate.map((p) => p.riga + 1)))
+  const spazio = Math.max(alta ? AREA_SETTIMANA : AREA_MESE, righe * passo + (corsie > max ? 1.5 : 0))
+  const [giornoAperto, setGiornoAperto] = useState<string | null>(null)
+  const vociDel = (i: number) => posizionate.filter((p) => p.col <= i && p.col + p.span > i).map((p) => p.v)
 
   return (
     <div className="relative grid grid-cols-7 border-b border-border last:border-b-0">
@@ -345,6 +353,7 @@ function Settimana({
         const fuori = meseCorrente && g.slice(0, 7) !== meseCorrente
         const eOggi = g === oggi
         const nascoste = posizionate.filter((p) => p.riga >= max && p.col <= i && p.col + p.span > i)
+        const quante = nascoste.length + visibili.filter((p) => p.col <= i && p.col + p.span > i).length
         return (
           <div
             key={g}
@@ -368,23 +377,26 @@ function Settimana({
             }}
             className={cn(
               "group/giorno relative border-r border-border transition-colors last:border-r-0",
-              alta ? "min-h-[28rem]" : "min-h-[7.5rem]",
               fuori ? "bg-muted/30" : giornoSettimana(g) >= 5 ? "bg-muted/15" : "",
               eOggi && "bg-primary/5",
               sopra === g && "bg-primary/10 ring-2 ring-inset ring-primary/40",
             )}
-            style={{ paddingTop: `${TESTA}rem`, paddingBottom: nascoste.length ? "1.75rem" : "0.5rem" }}
+            style={{ minHeight: `${TESTA + spazio + 0.5}rem` }}
           >
             <div className="absolute left-1.5 right-1.5 top-1.5 flex items-center justify-between gap-1">
-              <span
+              <button
+                type="button"
+                onClick={() => quante && setGiornoAperto(g)}
+                title={quante ? "Tutte le attività del giorno" : undefined}
                 className={cn(
                   "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums",
                   eOggi ? "bg-primary font-semibold text-primary-foreground shadow-sm" : fuori ? "text-muted-foreground/50" : "text-foreground/80",
+                  quante ? (eOggi ? "hover:bg-primary/90" : "hover:bg-accent") : "cursor-default",
                 )}
               >
                 {Number(g.slice(8))}
                 {g.slice(8) === "01" && !alta ? <span className="ml-1 font-normal">{MESI[Number(g.slice(5, 7)) - 1].slice(0, 3)}</span> : null}
-              </span>
+              </button>
               <CreaQui
                 giorno={g}
                 trigger={
@@ -398,9 +410,14 @@ function Settimana({
                 }
               />
             </div>
-            <div style={{ height: `${righe * passo}rem` }} />
             {nascoste.length ? (
-              <AltreDelGiorno giorno={g} voci={posizionate.filter((p) => p.col <= i && p.col + p.span > i).map((p) => p.v)} n={nascoste.length} onApri={onApri} coloreDi={coloreDi} />
+              <button
+                type="button"
+                onClick={() => setGiornoAperto(g)}
+                className="absolute bottom-1.5 left-1 right-1 rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                +{nascoste.length} altr{nascoste.length === 1 ? "a" : "e"}
+              </button>
             ) : null}
           </div>
         )
@@ -409,7 +426,7 @@ function Settimana({
         <Barra
           key={`${v.chiave}:${inizio}`}
           v={v}
-          alta={alta}
+          altezza={passo - 0.25}
           continuaPrima={v.da < inizio}
           continuaDopo={v.a > fine}
           scaduta={!v.fantasma && !fatta(v.t) && v.a < oggi}
@@ -423,13 +440,24 @@ function Settimana({
           }}
         />
       ))}
+      <DialogoGiorno
+        giorno={giornoAperto}
+        voci={giornoAperto ? vociDel(giorni.indexOf(giornoAperto)) : []}
+        oggi={oggi}
+        onChiudi={() => setGiornoAperto(null)}
+        onApri={(t) => {
+          setGiornoAperto(null)
+          onApri(t)
+        }}
+        coloreDi={coloreDi}
+      />
     </div>
   )
 }
 
 function Barra({
   v,
-  alta,
+  altezza,
   continuaPrima,
   continuaDopo,
   scaduta,
@@ -438,7 +466,8 @@ function Barra({
   style,
 }: {
   v: Voce
-  alta: boolean
+  /** In rem: decide quante cose ci stanno. */
+  altezza: number
   continuaPrima: boolean
   continuaDopo: boolean
   scaduta: boolean
@@ -448,6 +477,13 @@ function Barra({
 }) {
   const fattaOra = fatta(v.t)
   const ora = v.t.ora_scadenza && !v.fantasma ? v.t.ora_scadenza.slice(0, 5) : null
+  const misura = altezza >= 2.5 ? "grande" : altezza >= 1.6 ? "media" : "piccola"
+  const ids = v.t.assegnatari.map((x) => x.user_id)
+  const avatar = ids.length ? (
+    <span className={cn("ml-auto flex shrink-0 items-center", misura === "piccola" && "origin-right scale-75")}>
+      <GruppoAvatar ids={ids} misura={misura === "grande" ? "sm" : "xs"} max={misura === "grande" ? 3 : 2} />
+    </span>
+  ) : null
   return (
     <div
       draggable={!v.fantasma}
@@ -455,41 +491,52 @@ function Barra({
       onClick={() => onApri(v.t)}
       title={v.t.titolo}
       className={cn(
-        "absolute z-10 flex cursor-pointer overflow-hidden border text-[11px] font-medium leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md",
+        "absolute z-10 flex cursor-pointer overflow-hidden border font-medium leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md",
+        misura === "piccola" ? "text-[11px]" : misura === "media" ? "text-xs" : "text-[13px]",
         c.badge,
-        continuaPrima ? "rounded-l-none border-l-0" : "rounded-l-md",
-        continuaDopo ? "rounded-r-none border-r-0" : "rounded-r-md",
+        continuaPrima ? "rounded-l-none border-l-0" : misura === "grande" ? "rounded-l-lg" : "rounded-l-md",
+        continuaDopo ? "rounded-r-none border-r-0" : misura === "grande" ? "rounded-r-lg" : "rounded-r-md",
         v.fantasma && "border-dashed opacity-50 shadow-none",
         fattaOra && "opacity-55",
         scaduta && "ring-1 ring-red-500/60",
       )}
       style={style}
     >
-      {!continuaPrima ? <span className={cn("w-[3px] shrink-0", c.punto)} /> : null}
-      <span className={cn("flex min-w-0 flex-1 gap-1 px-1.5", alta ? "flex-col justify-center" : "items-center")}>
-        <span className="flex min-w-0 items-center gap-1">
-          {v.fantasma ? <Repeat className="h-2.5 w-2.5 shrink-0" /> : null}
-          <span className={cn("truncate", fattaOra && "line-through")}>{v.t.titolo}</span>
-          {!alta ? <BandierinaPriorita priorita={v.t.priorita} className="h-2.5 w-2.5" /> : null}
-          {!alta && ora ? <span className="ml-auto shrink-0 font-normal tabular-nums opacity-70">{ora}</span> : null}
-        </span>
-        {alta ? (
-          <span className="flex min-w-0 items-center gap-1.5 font-normal opacity-80">
+      {!continuaPrima ? <span className={cn("shrink-0", misura === "grande" ? "w-1" : "w-[3px]", c.punto)} /> : null}
+      {misura === "grande" ? (
+        <span className="flex min-w-0 flex-1 flex-col justify-between gap-1 px-2 py-1.5">
+          <span className="flex min-w-0 items-start gap-1">
+            {v.fantasma ? <Repeat className="mt-0.5 h-3 w-3 shrink-0" /> : null}
+            <span className={cn("break-words", altezza >= 4 ? "line-clamp-3" : "line-clamp-2", fattaOra && "line-through")}>{v.t.titolo}</span>
+          </span>
+          <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-normal">
             {ora ? (
-              <span className="inline-flex shrink-0 items-center gap-0.5 tabular-nums">
-                <Clock className="h-2.5 w-2.5" />
+              <span className="inline-flex shrink-0 items-center gap-0.5 tabular-nums opacity-80">
+                <Clock className="h-3 w-3" />
                 {ora}
               </span>
             ) : null}
-            <BandierinaPriorita priorita={v.t.priorita} className="h-2.5 w-2.5" />
-            <span className="ml-auto shrink-0">
-              <GruppoAvatar ids={v.t.assegnatari.map((x) => x.user_id)} misura="xs" max={3} />
-            </span>
+            <BandierinaPriorita priorita={v.t.priorita} className="h-3 w-3" />
+            {avatar}
           </span>
-        ) : null}
-      </span>
+        </span>
+      ) : (
+        <span className="flex min-w-0 flex-1 items-center gap-1 pl-1.5 pr-1">
+          {v.fantasma ? <Repeat className="h-2.5 w-2.5 shrink-0" /> : null}
+          <span className={cn("min-w-0 truncate", fattaOra && "line-through")}>{v.t.titolo}</span>
+          <BandierinaPriorita priorita={v.t.priorita} className={misura === "media" ? "h-3 w-3" : "h-2.5 w-2.5"} />
+          {ora ? <span className="shrink-0 font-normal tabular-nums opacity-70">{ora}</span> : null}
+          {avatar}
+        </span>
+      )}
     </div>
   )
+}
+
+const titoloGiorno = (giorno: string, oggi: string) => {
+  const diff = giorniTraIso(oggi, giorno)
+  const etichetta = diff === 0 ? "Oggi" : diff === 1 ? "Domani" : diff === -1 ? "Ieri" : null
+  return `${etichetta ? `${etichetta} · ` : ""}${maiuscola(`${GIORNI[giornoSettimana(giorno)]} ${Number(giorno.slice(8))} ${MESI[Number(giorno.slice(5, 7)) - 1]}`)}`
 }
 
 /** Agenda del giorno scelto (su mobile). */
@@ -506,16 +553,11 @@ function AgendaGiorno({
   onApri: (t: Task) => void
   coloreDi: (t: Task) => ReturnType<typeof colore>
 }) {
-  const diff = giorniTraIso(oggi, giorno)
-  const etichetta = diff === 0 ? "Oggi" : diff === 1 ? "Domani" : diff === -1 ? "Ieri" : null
   return (
     <div className="border-t border-border bg-muted/20">
       <div className="flex items-center gap-2 px-3 py-2.5">
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-semibold">
-            {etichetta ? `${etichetta} · ` : ""}
-            {maiuscola(`${GIORNI[giornoSettimana(giorno)]} ${Number(giorno.slice(8))} ${MESI[Number(giorno.slice(5, 7)) - 1]}`)}
-          </div>
+          <div className="text-sm font-semibold">{titoloGiorno(giorno, oggi)}</div>
           <div className="text-xs text-muted-foreground">{voci.length ? `${voci.length} attività` : "Niente in programma"}</div>
         </div>
         <CreaQui
@@ -529,50 +571,101 @@ function AgendaGiorno({
       </div>
       {voci.length ? (
         <div className="space-y-1.5 px-3 pb-3">
-          {voci.map((v) => {
-            const c = coloreDi(v.t)
-            const fattaOra = fatta(v.t)
-            const scaduta = !v.fantasma && !fattaOra && v.a < oggi
-            const ora = v.t.ora_scadenza && !v.fantasma ? v.t.ora_scadenza.slice(0, 5) : null
-            return (
-              <button
-                key={v.chiave}
-                type="button"
-                onClick={() => onApri(v.t)}
-                className={cn(
-                  "flex w-full overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm active:bg-accent/50",
-                  v.fantasma && "border-dashed opacity-60 shadow-none",
-                )}
-              >
-                <span className={cn("w-1 shrink-0", c.punto)} />
-                <span className="min-w-0 flex-1 px-3 py-2">
-                  <span className="flex min-w-0 items-center gap-1.5">
-                    {v.fantasma ? <Repeat className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
-                    <span className={cn("truncate text-sm font-medium", fattaOra && "text-muted-foreground line-through")}>{v.t.titolo}</span>
-                    <BandierinaPriorita priorita={v.t.priorita} />
-                  </span>
-                  <span className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
-                    {ora ? (
-                      <span className="inline-flex shrink-0 items-center gap-1 tabular-nums">
-                        <Clock className="h-3 w-3" />
-                        {ora}
-                      </span>
-                    ) : null}
-                    {v.da !== v.a ? <span className="truncate">{`${dataBreve(v.da)} → ${dataBreve(v.a)}`}</span> : null}
-                    {scaduta ? <span className="shrink-0 font-medium text-red-600 dark:text-red-400">Scaduta</span> : null}
-                    {fattaOra ? <span className="shrink-0 text-emerald-600 dark:text-emerald-400">Fatta</span> : null}
-                    {v.fantasma ? <span className="shrink-0">Prossima ricorrenza</span> : null}
-                  </span>
-                </span>
-                <span className="flex shrink-0 items-center pr-3">
-                  <GruppoAvatar ids={v.t.assegnatari.map((x) => x.user_id)} misura="sm" max={2} />
-                </span>
-              </button>
-            )
-          })}
+          {voci.map((v) => (
+            <SchedaVoce key={v.chiave} v={v} oggi={oggi} onApri={onApri} c={coloreDi(v.t)} />
+          ))}
         </div>
       ) : null}
     </div>
+  )
+}
+
+/** Tutte le attività di un giorno (dal numero del giorno o da "+N altre"). */
+function DialogoGiorno({
+  giorno,
+  voci,
+  oggi,
+  onChiudi,
+  onApri,
+  coloreDi,
+}: {
+  giorno: string | null
+  voci: Voce[]
+  oggi: string
+  onChiudi: () => void
+  onApri: (t: Task) => void
+  coloreDi: (t: Task) => ReturnType<typeof colore>
+}) {
+  const ordinate = [...voci].sort((x, y) => Number(fatta(x.t)) - Number(fatta(y.t)) || ordinaPerPriorita(x.t, y.t))
+  const aperte = voci.filter((v) => !fatta(v.t) && !v.fantasma).length
+  return (
+    <Dialogo
+      aperto={!!giorno}
+      onChiudi={onChiudi}
+      titolo={giorno ? titoloGiorno(giorno, oggi) : ""}
+      descrizione={`${voci.length} attività${aperte !== voci.length ? ` · ${aperte} da fare` : ""}`}
+      className="max-w-xl"
+      piede={
+        giorno ? (
+          <CreaQui
+            giorno={giorno}
+            trigger={
+              <Bottone variante="contorno" misura="sm" className="rounded-lg">
+                <Plus /> Aggiungi in questo giorno
+              </Bottone>
+            }
+          />
+        ) : null
+      }
+    >
+      <div className="space-y-1.5">
+        {ordinate.map((v) => (
+          <SchedaVoce key={v.chiave} v={v} oggi={oggi} onApri={onApri} c={coloreDi(v.t)} />
+        ))}
+      </div>
+    </Dialogo>
+  )
+}
+
+function SchedaVoce({ v, oggi, onApri, c }: { v: Voce; oggi: string; onApri: (t: Task) => void; c: ReturnType<typeof colore> }) {
+  const { categoria } = useAttivita()
+  const fattaOra = fatta(v.t)
+  const scaduta = !v.fantasma && !fattaOra && v.a < oggi
+  const ora = v.t.ora_scadenza && !v.fantasma ? v.t.ora_scadenza.slice(0, 5) : null
+  return (
+    <button
+      type="button"
+      onClick={() => onApri(v.t)}
+      className={cn(
+        "flex w-full overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm transition-colors hover:bg-accent/40 active:bg-accent/50",
+        v.fantasma && "border-dashed opacity-60 shadow-none",
+      )}
+    >
+      <span className={cn("w-1 shrink-0", c.punto)} />
+      <span className="min-w-0 flex-1 px-3 py-2">
+        <span className="flex min-w-0 items-center gap-1.5">
+          {v.fantasma ? <Repeat className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
+          <span className={cn("truncate text-sm font-medium", fattaOra && "text-muted-foreground line-through")}>{v.t.titolo}</span>
+          <BandierinaPriorita priorita={v.t.priorita} />
+        </span>
+        <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+          <span className={cn("shrink-0", c.testo)}>{categoria(v.t.categoria_id)?.nome}</span>
+          {ora ? (
+            <span className="inline-flex shrink-0 items-center gap-1 tabular-nums">
+              <Clock className="h-3 w-3" />
+              {ora}
+            </span>
+          ) : null}
+          {v.da !== v.a ? <span className="truncate">{`${dataBreve(v.da)} → ${dataBreve(v.a)}`}</span> : null}
+          {scaduta ? <span className="shrink-0 font-medium text-red-600 dark:text-red-400">Scaduta</span> : null}
+          {fattaOra ? <span className="shrink-0 text-emerald-600 dark:text-emerald-400">Fatta</span> : null}
+          {v.fantasma ? <span className="shrink-0">Prossima ricorrenza</span> : null}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center pr-3">
+        <GruppoAvatar ids={v.t.assegnatari.map((x) => x.user_id)} misura="sm" max={2} />
+      </span>
+    </button>
   )
 }
 
@@ -604,48 +697,6 @@ function CreaQui({ giorno, trigger }: { giorno: string; trigger: ReactNode }) {
           <Plus />
         </Bottone>
       </div>
-    </Popover>
-  )
-}
-
-function AltreDelGiorno({
-  giorno,
-  voci,
-  n,
-  onApri,
-  coloreDi,
-}: {
-  giorno: string
-  voci: Voce[]
-  n: number
-  onApri: (t: Task) => void
-  coloreDi: (t: Task) => ReturnType<typeof colore>
-}) {
-  return (
-    <Popover
-      className="w-72"
-      trigger={
-        <button type="button" className="absolute bottom-1 left-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-accent hover:text-foreground">
-          +{n} altre
-        </button>
-      }
-    >
-      <div className="mb-1 px-2 pt-1 text-xs font-semibold capitalize text-muted-foreground">
-        {GIORNI[giornoSettimana(giorno)]} {dataBreve(giorno)}
-      </div>
-      {voci.map((v) => (
-        <button
-          key={v.chiave}
-          type="button"
-          onClick={() => onApri(v.t)}
-          className={cn("flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-accent", (v.fantasma || fatta(v.t)) && "opacity-60")}
-        >
-          <span className={cn("h-2 w-2 shrink-0 rounded-full", coloreDi(v.t).punto)} />
-          {v.fantasma ? <Repeat className="h-3 w-3 shrink-0" /> : null}
-          <span className={cn("min-w-0 flex-1 truncate", fatta(v.t) && "line-through")}>{v.t.titolo}</span>
-          <GruppoAvatar ids={v.t.assegnatari.map((x) => x.user_id)} misura="xs" max={2} />
-        </button>
-      ))}
     </Popover>
   )
 }
