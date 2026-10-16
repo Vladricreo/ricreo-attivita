@@ -53,11 +53,25 @@ jobs:
           TOKEN: ${{ secrets.SYNC_TOKEN }}
         run: |
           set -euo pipefail
+          # Spazi o a capo incollati insieme al token rompono l'indirizzo.
+          TOKEN=$(printf '%s' "${TOKEN}" | tr -d '[:space:]')
           if [ -z "${TOKEN}" ]; then
             echo "::error::Manca il secret SYNC_TOKEN in questo repo."
             exit 1
           fi
-          git clone -q --filter=blob:none --sparse "https://x-access-token:${TOKEN}@github.com/${OWNER}/${REPO}.git" app
+          echo "::add-mask::${TOKEN}"
+          URL="https://x-access-token:${TOKEN}@github.com/${OWNER}/${REPO}.git"
+          pulisci() { sed -e "s#${TOKEN}#***#g" | tr '\n' ' ' | cut -c1-300; }
+
+          # Errori di accesso scritti nelle annotazioni (i log li vede solo un admin del repo).
+          if ! ERR=$(git ls-remote "${URL}" HEAD 2>&1 >/dev/null); then
+            echo "::error::${REPO}: GitHub non accetta SYNC_TOKEN per ${OWNER}/${REPO} ($(printf '%s' "${ERR}" | pulisci)). Il token deve includere questo repo con Contents: Read and write."
+            exit 1
+          fi
+          if ! ERR=$(git clone -q --filter=blob:none --sparse "${URL}" app 2>&1); then
+            echo "::error::${REPO}: clone non riuscito ($(printf '%s' "${ERR}" | pulisci))."
+            exit 1
+          fi
           cd app
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -81,9 +95,13 @@ jobs:
             git update-index --cacheinfo "160000,${GITHUB_SHA},${PERCORSO}"
             git commit -q -m "Attività: aggiorna il modulo a ${GITHUB_SHA:0:7}" \
               -m "$(git -C ../modulo log --format='- %s' "${ATTUALE}..${GITHUB_SHA}" | head -20)"
-            if git push -q origin HEAD:main; then
+            if OUT=$(git push -q origin HEAD:main 2>&1); then
               echo "${REPO}: ${ATTUALE:0:7} → ${GITHUB_SHA:0:7}"
               exit 0
+            fi
+            if printf '%s' "${OUT}" | grep -qiE "403|denied|permission|protected"; then
+              echo "::error::${REPO}: push rifiutato ($(printf '%s' "${OUT}" | pulisci)). Serve Contents: Read and write e main senza protezioni che blocchino il push."
+              exit 1
             fi
             echo "${REPO}: main è cambiato nel frattempo, riprovo (${tentativo})."
             sleep $((tentativo * 3))
