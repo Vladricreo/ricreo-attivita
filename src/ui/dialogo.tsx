@@ -14,6 +14,7 @@ export function Dialogo({
   children,
   piede,
   className,
+  bloccante,
 }: {
   aperto: boolean
   onChiudi: () => void
@@ -22,16 +23,23 @@ export function Dialogo({
   children: ReactNode
   piede?: ReactNode
   className?: string
+  /** Si chiude solo dai bottoni del piede (niente X, Esc o clic fuori). */
+  bloccante?: boolean
 }) {
+  const ferma = bloccante ? (e: Event) => e.preventDefault() : undefined
   return (
-    <D.Root open={aperto} onOpenChange={(v) => !v && onChiudi()}>
+    <D.Root open={aperto} onOpenChange={(v) => !v && !bloccante && onChiudi()}>
       <D.Portal>
-        <D.Overlay className="fixed inset-0 z-50 bg-black/50" />
+        <D.Overlay className={cn("fixed inset-0 bg-black/50", bloccante ? "z-[60]" : "z-50")} />
         <D.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-background shadow-xl focus:outline-none",
+            "fixed left-1/2 top-1/2 flex max-h-[92dvh] w-[calc(100vw-1.5rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl border border-border bg-background shadow-xl focus:outline-none",
+            bloccante ? "z-[60]" : "z-50",
             className,
           )}
+          onEscapeKeyDown={ferma}
+          onPointerDownOutside={ferma}
+          onInteractOutside={ferma}
         >
           <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
             <div className="min-w-0">
@@ -42,9 +50,11 @@ export function Dialogo({
                 <D.Description className="sr-only">{typeof titolo === "string" ? titolo : "Finestra"}</D.Description>
               )}
             </div>
-            <D.Close className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Chiudi">
-              <X className="h-4 w-4" />
-            </D.Close>
+            {bloccante ? null : (
+              <D.Close className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Chiudi">
+                <X className="h-4 w-4" />
+              </D.Close>
+            )}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">{children}</div>
           {piede ? <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3">{piede}</div> : null}

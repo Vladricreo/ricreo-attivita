@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Bell,
   BellOff,
+  BellRing,
   Building2,
   CalendarDays,
   ChevronLeft,
@@ -26,6 +27,7 @@ import { colore } from "../colori"
 import { BadgeCategoria, ICONE_CATEGORIA, ICONE_STATO, LogoServizio } from "../componenti/aspetto"
 import { MenuAzioniTask } from "../componenti/azioni-task"
 import { GruppoAvatar, ScegliPersone } from "../componenti/persone"
+import { DialogoSollecito, useSollecitabili } from "../componenti/solleciti"
 import { SelettoreCategoria, SelettoreData, SelettorePriorita, SelettoreRicorrenza, SelettoreStato, Chip } from "../componenti/selettori"
 import { useAttivita } from "../contesto"
 import { messaggioErrore } from "../dati/api"
@@ -123,6 +125,8 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
   const ass = t.assegnatari.map((a) => a.user_id)
   const io = persona(me)
   const seguo = !!me && t.osservatori.includes(me)
+  const sollecitabili = useSollecitabili(t)
+  const [sollecito, setSollecito] = useState(false)
   const mia = t.creato_da === me
   const fattaOra = fatta(t)
   const mioTurno = t.conferma_tutti && t.assegnatari.find((a) => a.user_id === me)
@@ -162,6 +166,14 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
           {seguo ? <Bell className="text-primary" /> : <BellOff className="text-muted-foreground" />}
         </Bottone>
       </Suggerimento>
+      {sollecitabili.length ? (
+        <Suggerimento testo="Sollecita: promemoria o popup a chi deve farla">
+          <Bottone variante="fantasma" misura="sm" onClick={() => setSollecito(true)} aria-label="Sollecita">
+            <BellRing /> <span className="hidden sm:inline">Sollecita</span>
+          </Bottone>
+        </Suggerimento>
+      ) : null}
+      {sollecitabili.length ? <DialogoSollecito t={t} aperto={sollecito} onChiudi={() => setSollecito(false)} /> : null}
       <MenuAzioniTask t={t} />
       <ChiudiPannello className="hidden rounded-md p-1.5 text-muted-foreground hover:bg-accent sm:block" aria-label="Chiudi">
         <X className="h-4 w-4" />

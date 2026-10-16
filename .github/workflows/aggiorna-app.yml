@@ -37,6 +37,8 @@ jobs:
             percorso: client/modules/attivita
           - repo: Product-console
             percorso: modules/attivita
+          - repo: Ricreo-planner
+            percorso: modules/attivita
     env:
       OWNER: Vladricreo
       REPO: ${{ matrix.repo }}

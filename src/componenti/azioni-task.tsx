@@ -4,6 +4,7 @@ import {
   Archive,
   Bell,
   BellOff,
+  BellRing,
   CalendarDays,
   Copy,
   Ellipsis,
@@ -13,6 +14,7 @@ import {
   RotateCcw,
   Trash2,
 } from "lucide-react"
+import { useState } from "react"
 import { colore } from "../colori"
 import { useAttivita } from "../contesto"
 import { messaggioErrore } from "../dati/api"
@@ -23,6 +25,7 @@ import { Bottone } from "../ui/bottone"
 import { cn } from "../ui/cn"
 import { Menu, MenuSeparatore, MenuVoce, SottoMenu } from "../ui/menu"
 import { ICONE_STATO } from "./aspetto"
+import { DialogoSollecito, useSollecitabili } from "./solleciti"
 
 /** Copia completa: campi, persone, checklist e sottotask (aperte). */
 export async function duplicaTask(ctx: ReturnType<typeof useAttivita>, t: Task): Promise<string | null> {
@@ -85,8 +88,12 @@ export function MenuAzioniTask({ t, onApri, className }: { t: Task; onApri?: () 
     void azioni.aggiorna(t.id, patch)
   }
   const seguo = !!me && t.osservatori.includes(me)
+  const sollecitabili = useSollecitabili(t)
+  const [sollecito, setSollecito] = useState(false)
+  const ferma = (e: { stopPropagation: () => void }) => e.stopPropagation()
 
   return (
+    <>
     <Menu
       trigger={
         <Bottone variante="fantasma" misura="icona-sm" className={cn("text-muted-foreground", className)} aria-label="Azioni" onClick={(e) => e.stopPropagation()}>
@@ -142,6 +149,11 @@ export function MenuAzioniTask({ t, onApri, className }: { t: Task; onApri?: () 
         {t.scadenza && !t.ricorrenza_unita ? <MenuVoce onSeleziona={() => sposta(null)}>Senza scadenza</MenuVoce> : null}
       </SottoMenu>
       <MenuSeparatore />
+      {sollecitabili.length ? (
+        <MenuVoce onSeleziona={() => setSollecito(true)}>
+          <BellRing /> Sollecita…
+        </MenuVoce>
+      ) : null}
       <MenuVoce onSeleziona={() => void azioni.osserva(t, !seguo)}>
         {seguo ? <BellOff /> : <Bell />} {seguo ? "Non seguire più" : "Segui"}
       </MenuVoce>
@@ -179,5 +191,12 @@ export function MenuAzioniTask({ t, onApri, className }: { t: Task; onApri?: () 
         </MenuVoce>
       )}
     </Menu>
+    {sollecitabili.length ? (
+      // Il dialogo sta in un portal ma gli eventi React risalgono: non devono arrivare a riga o scheda (apri, trascina).
+      <span className="contents" onClick={ferma} onPointerDown={ferma} onKeyDown={ferma}>
+        <DialogoSollecito t={t} aperto={sollecito} onChiudi={() => setSollecito(false)} />
+      </span>
+    ) : null}
+    </>
   )
 }

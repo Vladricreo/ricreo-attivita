@@ -80,6 +80,8 @@ export function Storico({ t }: { t: Task }) {
         return "l'ha resa personale"
       case "condivisa":
         return "l'ha resa visibile a chi è coinvolto"
+      case "sollecito":
+        return `ha mandato ${d.forte ? "un sollecito forte" : "un promemoria"} a ${nome(d.persona)}`
       case "allegato":
         return `ha aggiunto ${d.nome ?? "un file"}${suSotto}`
       default:

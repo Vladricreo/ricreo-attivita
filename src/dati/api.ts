@@ -13,6 +13,7 @@ import type {
   Persona,
   Preferenze,
   Reazione,
+  Sollecito,
   Sottocategoria,
   Stato,
   Task,
@@ -293,6 +294,25 @@ export function creaApi(sb: SupabaseClient<any, any, any>) {
     },
     async archiviaNotifica(id: string): Promise<void> {
       ok(await db().from("notifiche").update({ archiviata_at: new Date().toISOString(), letta_at: new Date().toISOString() }).eq("id", id))
+    },
+
+    // Solleciti --------------------------------------------------------------------------------------
+    async sollecita(taskId: string, persona: string, forte: boolean, messaggio: string | null): Promise<void> {
+      ok(await db().rpc("sollecita", { p_task: taskId, p_persona: persona, p_forte: forte, p_messaggio: messaggio }), "Sollecito non inviato")
+    },
+    /** Solleciti forti ricevuti e non ancora confermati (popup), con il titolo dell'attività. */
+    async sollecitiDaConfermare(me: string): Promise<(Sollecito & { titolo: string | null })[]> {
+      const righe = ok(
+        await db().from("solleciti").select("*, task:task_id(titolo)").eq("a", me).eq("forte", true).is("visto_at", null).order("creato_at").limit(20),
+      ) as (Sollecito & { task: { titolo: string } | null })[]
+      return righe.map(({ task, ...s }) => ({ ...s, titolo: task?.titolo ?? null }))
+    },
+    /** Solleciti mandati da me su un'attività (per sapere se sono stati visti). */
+    async sollecitiMandati(taskId: string, me: string): Promise<Sollecito[]> {
+      return ok(await db().from("solleciti").select("*").eq("task_id", taskId).eq("da", me).order("creato_at", { ascending: false }).limit(20)) as Sollecito[]
+    },
+    async confermaSollecito(id: string): Promise<void> {
+      ok(await db().rpc("conferma_sollecito", { p_id: id }))
     },
 
     // Impostazioni (admin) ----------------------------------------------------------------------------

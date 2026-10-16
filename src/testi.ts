@@ -22,6 +22,10 @@ export function testoNotifica(n: Notifica, nome: (id: string | null) => string, 
       return { titolo: `Sottotask tutte fatte in “${titolo}”`, dettaglio: "Puoi chiudere l'attività" }
     case "riaperta":
       return { titolo: `${chi} ha riaperto “${titolo}”`, dettaglio: null }
+    case "sollecito":
+      return { titolo: `${chi} ti ricorda “${titolo}”`, dettaglio: n.testo }
+    case "sollecito_forte":
+      return { titolo: `Sollecito urgente da ${chi}: “${titolo}”`, dettaglio: n.testo }
     default:
       return { titolo, dettaglio: n.testo }
   }

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { creaApi, messaggioErrore, type Api, type Base } from "./dati/api"
 import { aggiungiGiorniIso, oggiIso, statoDiTipo } from "./regole"
 import type { BozzaTask, Categoria, ConfigAttivita, ModificaTask, Notifica, Persona, Preferenze, Sottocategoria, Stato, Task } from "./tipi"
+import { PopupSolleciti } from "./componenti/solleciti"
 import { Avvisi, avviso } from "./ui/avvisi"
 import { ProviderSuggerimenti } from "./ui/suggerimento"
 
@@ -364,6 +365,7 @@ export function AttivitaProvider({ config, children }: { config: ConfigAttivita;
     <Ctx.Provider value={valore}>
       <ProviderSuggerimenti>
         {children}
+        <PopupSolleciti />
         <Avvisi />
       </ProviderSuggerimenti>
     </Ctx.Provider>

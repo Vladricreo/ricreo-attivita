@@ -1,6 +1,6 @@
 "use client"
 
-import { AtSign, Bell, CircleCheck, Hourglass, ListChecks, MessageSquare, RotateCcw, Shuffle, UserPlus, X, type LucideIcon } from "lucide-react"
+import { AtSign, Bell, BellRing, CircleCheck, Hourglass, ListChecks, Megaphone, MessageSquare, RotateCcw, Shuffle, UserPlus, X, type LucideIcon } from "lucide-react"
 import { useMemo } from "react"
 import { colore } from "../colori"
 import { useAttivita, useRichiedi } from "../contesto"
@@ -22,6 +22,8 @@ const ICONE: Record<TipoNotifica, LucideIcon> = {
   sottotask_finite: ListChecks,
   scadenza: Bell,
   riaperta: RotateCcw,
+  sollecito: BellRing,
+  sollecito_forte: Megaphone,
 }
 
 export function RigaNotifica({ n, onApri, onArchivia, compatta }: { n: Notifica; onApri: () => void; onArchivia?: () => void; compatta?: boolean }) {

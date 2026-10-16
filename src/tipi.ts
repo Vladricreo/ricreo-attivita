@@ -290,6 +290,8 @@ export type TipoNotifica =
   | "sottotask_finite"
   | "scadenza"
   | "riaperta"
+  | "sollecito"
+  | "sollecito_forte"
 
 export type Notifica = {
   id: string
@@ -308,6 +310,19 @@ export type Notifica = {
   archiviata_at: string | null
 }
 
+/** Sollecito di un admin o di un manager (forte = popup da confermare nell'app app_slug, null = tutte). */
+export type Sollecito = {
+  id: string
+  task_id: string
+  da: string
+  a: string
+  forte: boolean
+  messaggio: string | null
+  app_slug: string | null
+  creato_at: string
+  visto_at: string | null
+}
+
 /** Configurazione passata da ogni app al modulo. */
 export type ConfigAttivita = {
   /** Slug dell'app che monta il modulo (public."RicreoApp".slug): categoria di default e notifiche. */
@@ -323,7 +338,7 @@ export type ConfigAttivita = {
   /** Pagine di questa app proposte nel campo "Pagina da aprire". */
   pagine?: { etichetta: string; href: string }[]
   /** Dopo un'azione che avvisa altre persone (es. push immediate dell'app): assegnazioni e messaggi. */
-  dopo?: (e: { tipo: "assegnazione" | "messaggio"; taskId: string; utenti: string[] }) => void
+  dopo?: (e: { tipo: "assegnazione" | "messaggio" | "sollecito"; taskId: string; utenti: string[] }) => void
   /** Pezzi specifici dell'app. */
   estensioni?: {
     /** Sezione in fondo al dettaglio (es. Finance: stato del job che fa l'attività). */

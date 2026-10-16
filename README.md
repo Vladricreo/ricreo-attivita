@@ -17,6 +17,10 @@ preventivatore): una task assegnata da Inventory a una persona la vede anche in 
 - **Chat** per attività in tempo reale: @menzioni, risposte, reazioni, foto incollate/trascinate/scattate,
   "sta scrivendo", non letti. Foto e file nel bucket privato `tasks` (le foto si rimpiccioliscono prima).
 - **Notifiche** per persona nell'app della categoria (o in tutte le sue se non usa quell'app).
+- **Solleciti** (admin, o manager delle persone che segue): dal dettaglio o dal menu "…" di un'attività,
+  a una persona coinvolta. *Promemoria* = notifica (e push) nell'app della categoria; *forte* = in più un
+  popup in quell'app che resta finché non lo conferma (`PopupSolleciti`, montato dal provider: nessun lavoro
+  nelle app). Chi lo manda vede se è stato visto.
 - **Cestino**: eliminare sposta nel cestino; dopo un anno un job cancella righe e file.
 
 ## Chi vede cosa (RLS)
@@ -103,12 +107,12 @@ git add -A && git commit -m "…" && git push
 ```
 
 Fatto il push, il workflow `.github/workflows/aggiorna-app.yml` porta il puntatore all'ultima versione su
-`main` di **tutte** le app (Finance, Inventory, Print farm, Product console) con un commit
+`main` di **tutte** le app (Finance, Inventory, Print farm, Product console, Planner) con un commit
 "Attività: aggiorna il modulo a …", e Coolify le ripubblica. Nell'app dove hai lavorato basta poi `git pull`.
 Il workflow non torna mai indietro: se un'app è già su una versione più nuova, la lascia stare.
 
 - Serve il secret `SYNC_TOKEN` in questo repo (Settings → Secrets and variables → Actions): un token GitHub
-  con "Contents: Read and write" sui quattro repo delle app. Si può rilanciare a mano da Actions.
+  con "Contents: Read and write" sui repo delle app. Si può rilanciare a mano da Actions.
 - Una nuova app che monta il modulo va aggiunta alla `matrix` del workflow.
 - In locale `predev` (prima di `bun dev`) porta il modulo all'ultima versione di `main` in tutte le app,
   così si vedono subito anche le modifiche fatte da un'altra app.
