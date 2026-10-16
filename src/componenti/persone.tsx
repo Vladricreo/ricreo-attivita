@@ -1,10 +1,10 @@
 "use client"
 
-import { Check, Search, Users } from "lucide-react"
+import { Check, Search, UserCog, Users, X } from "lucide-react"
 import { useMemo, useState, type ReactNode } from "react"
 import { colore, colorePersona } from "../colori"
 import { useAttivita } from "../contesto"
-import { eAdmin, eManager, iniziali, normalizza } from "../regole"
+import { eAdmin, eManager, iniziali, normalizza, primoNome } from "../regole"
 import type { Persona } from "../tipi"
 import { cn } from "../ui/cn"
 import { Suggerimento } from "../ui/suggerimento"
@@ -114,8 +114,10 @@ export function ScegliPersone({
   titolo?: string
   onFine?: () => void
 }) {
-  const { base, me, config } = useAttivita()
+  const { base, me, config, persona } = useAttivita()
   const [q, setQ] = useState("")
+  // Chi segue chi (tasks.manager_persone): "lo segui tu" e il suo responsabile sotto il nome.
+  const responsabili = (id: string) => (base?.manager ?? []).filter((x) => x.persona_id === id).map((x) => x.manager_id)
   const persone = useMemo(() => {
     const tutte = (base?.persone ?? []).filter((p) => p.attivo && (!soloIds || soloIds.includes(p.auth_id)))
     const n = normalizza(q.trim())
@@ -141,6 +143,19 @@ export function ScegliPersone({
   return (
     <div className="flex flex-col gap-1">
       {titolo ? <div className="px-1 pb-1 text-xs font-medium text-muted-foreground">{titolo}</div> : null}
+      {multiplo && scelti.length > 0 ? (
+        <div className="flex flex-wrap gap-1 px-1 pb-1">
+          {scelti.map((id) => (
+            <span key={id} className="inline-flex max-w-full items-center gap-1 rounded-full bg-accent py-0.5 pl-0.5 pr-1.5 text-xs">
+              <AvatarPersona id={id} misura="xs" />
+              <span className="truncate">{id === me ? "Tu" : primoNome(persona(id)?.nome)}</span>
+              <button type="button" onClick={() => cambia(id)} className="text-muted-foreground hover:text-foreground" aria-label="Togli">
+                <X className="h-3 w-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : null}
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -160,6 +175,14 @@ export function ScegliPersone({
           persone.map((p) => {
             const si = scelti.includes(p.auth_id)
             const ruolo = etichettaRuolo(p)
+            const resp = responsabili(p.auth_id)
+            const seguoIo = !!me && resp.includes(me)
+            const altri = resp.filter((x) => x !== me)
+            const sotto = [
+              !p.app.includes(config.app) ? "Non usa questa app" : null,
+              seguoIo ? "La segui tu" : null,
+              altri.length ? `Responsabile: ${altri.map((x) => primoNome(persona(x)?.nome)).join(", ")}` : null,
+            ].filter(Boolean)
             return (
               <button
                 key={p.auth_id}
@@ -173,7 +196,12 @@ export function ScegliPersone({
                     {p.nome}
                     {p.auth_id === me ? <span className="text-muted-foreground"> (tu)</span> : null}
                   </span>
-                  {!p.app.includes(config.app) ? <span className="block truncate text-[11px] text-muted-foreground">Non usa questa app</span> : null}
+                  {sotto.length ? (
+                    <span className="flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                      {seguoIo || altri.length ? <UserCog className="h-3 w-3 shrink-0" /> : null}
+                      <span className="truncate">{sotto.join(" · ")}</span>
+                    </span>
+                  ) : null}
                 </span>
                 {ruolo ? <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{ruolo}</span> : null}
                 <Check className={cn("h-4 w-4 shrink-0 text-primary", si ? "opacity-100" : "opacity-0")} />
@@ -189,4 +217,14 @@ export function ScegliPersone({
       ) : null}
     </div>
   )
+}
+
+/** "Anna", "Anna e Bruno", "Anna, Bruno e Carla", "Anna, Bruno e altri 3": chi stai assegnando, a colpo d'occhio. */
+export function NomiPersone({ ids }: { ids: string[] }) {
+  const { persona, me } = useAttivita()
+  const nomi = ids.map((id) => (id === me ? "tu" : primoNome(persona(id)?.nome)))
+  if (!nomi.length) return null
+  const testo =
+    nomi.length === 1 ? (ids[0] === me ? "Tu" : (persona(ids[0])?.nome ?? nomi[0])) : nomi.length <= 3 ? `${nomi.slice(0, -1).join(", ")} e ${nomi[nomi.length - 1]}` : `${nomi.slice(0, 2).join(", ")} e altri ${nomi.length - 2}`
+  return <span className="truncate">{testo.charAt(0).toUpperCase() + testo.slice(1)}</span>
 }

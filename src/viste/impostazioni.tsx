@@ -1,10 +1,10 @@
 "use client"
 
-import { Archive, Eye, Plus, RotateCcw, ShieldCheck, Users } from "lucide-react"
+import { Archive, Eye, Plus, RotateCcw } from "lucide-react"
 import { useState } from "react"
 import { colore, ELENCO_COLORI } from "../colori"
 import { SezioneGoogle } from "../componenti/google"
-import { AvatarPersona, GruppoAvatar, ScegliPersone } from "../componenti/persone"
+import { SezioneRuoli } from "../componenti/ruoli"
 import { useAttivita } from "../contesto"
 import { messaggioErrore } from "../dati/api"
 import { eAdmin, eManager } from "../regole"
@@ -31,7 +31,6 @@ export function VistaImpostazioni() {
   }
 
   if (!base) return null
-  const managers = base.persone.filter((p) => p.attivo && eManager(p))
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -44,56 +43,13 @@ export function VistaImpostazioni() {
         <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
           <li>Ognuno vede le attività in cui è coinvolto: create da lui, assegnate a lui o che segue (anche solo una sottotask).</li>
           <li>Le attività personali le vede solo chi le ha create, nemmeno gli admin.</li>
-          <li>Gli admin vedono tutte le altre; i manager quelle delle persone che seguono (qui sotto).</li>
+          <li>Gli admin vedono tutte le altre; i manager quelle delle persone che seguono (vedi Ruoli e responsabili).</li>
           <li>Chi è @menzionato in una chat entra tra chi segue l&apos;attività.</li>
           <li>Le notifiche arrivano nell&apos;app della categoria; se la persona non usa quell&apos;app, in tutte le sue.</li>
         </ul>
       </section>
 
-      <section className="rounded-lg border border-border bg-card">
-        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <ShieldCheck className="h-4 w-4" />
-          <h3 className="text-sm font-semibold">Manager e persone seguite</h3>
-        </div>
-        <div className="divide-y divide-border">
-          {managers.map((m) => {
-            const seguiti = base.manager.filter((x) => x.manager_id === m.auth_id).map((x) => x.persona_id)
-            return (
-              <div key={m.auth_id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <AvatarPersona id={m.auth_id} misura="md" conNome />
-                <span className="flex-1" />
-                {admin ? (
-                  <Popover
-                    allinea="end"
-                    trigger={
-                      <button type="button" className="flex items-center gap-2 rounded-md border border-border px-2 py-1 text-sm hover:bg-accent">
-                        {seguiti.length ? <GruppoAvatar ids={seguiti} max={6} /> : <span className="text-muted-foreground">Nessuno</span>}
-                        <Users className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    }
-                  >
-                    <ScegliPersone
-                      titolo={`Chi segue ${m.nome.split(" ")[0]}`}
-                      scelti={seguiti}
-                      soloIds={base.persone.filter((p) => p.auth_id !== m.auth_id).map((p) => p.auth_id)}
-                      onCambia={(nuovi) =>
-                        void fai(async () => {
-                          for (const p of nuovi.filter((x) => !seguiti.includes(x))) await api.managerPersona(m.auth_id, p, true)
-                          for (const p of seguiti.filter((x) => !nuovi.includes(x))) await api.managerPersona(m.auth_id, p, false)
-                        })
-                      }
-                    />
-                  </Popover>
-                ) : (
-                  <GruppoAvatar ids={seguiti} max={8} vuoto={<span className="text-sm text-muted-foreground">Nessuno</span>} />
-                )}
-              </div>
-            )
-          })}
-          {!managers.length ? <p className="px-4 py-3 text-sm text-muted-foreground">Nessuna persona con il ruolo Manager (i ruoli si danno in Inventory → Utenti).</p> : null}
-        </div>
-        {!admin ? <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">Solo gli admin possono cambiare chi segue chi.</p> : null}
-      </section>
+      <SezioneRuoli />
 
       <section className="rounded-lg border border-border bg-card">
         <div className="border-b border-border px-4 py-3">

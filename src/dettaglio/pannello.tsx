@@ -26,7 +26,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { colore } from "../colori"
 import { BadgeCategoria, ICONE_CATEGORIA, ICONE_STATO, LogoServizio } from "../componenti/aspetto"
 import { MenuAzioniTask } from "../componenti/azioni-task"
-import { GruppoAvatar, ScegliPersone } from "../componenti/persone"
+import { GruppoAvatar, NomiPersone, ScegliPersone } from "../componenti/persone"
 import { DialogoSollecito, useSollecitabili } from "../componenti/solleciti"
 import { SelettoreCategoria, SelettoreData, SelettorePriorita, SelettoreRicorrenza, SelettoreStato, Chip } from "../componenti/selettori"
 import { useAttivita } from "../contesto"
@@ -249,7 +249,7 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
                 {ass.length ? (
                   <>
                     <GruppoAvatar ids={ass} max={4} fatti={t.conferma_tutti ? new Set(t.assegnatari.filter((a) => a.fatto_at).map((a) => a.user_id)) : undefined} />
-                    {ass.length === 1 ? <span className="truncate">{persona(ass[0])?.nome}</span> : null}
+                    <NomiPersone ids={ass} />
                   </>
                 ) : (
                   "Nessuno"

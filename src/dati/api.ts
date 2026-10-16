@@ -332,6 +332,10 @@ export function creaApi(sb: SupabaseClient<any, any, any>) {
     },
 
     // Impostazioni (admin) ----------------------------------------------------------------------------
+    /** Dà o toglie il ruolo Admin/Manager (condiviso da tutte le app). Togliere Manager toglie anche le persone seguite. */
+    async impostaRuolo(persona: string, ruolo: "Admin" | "Manager", si: boolean): Promise<void> {
+      ok(await db().rpc("imposta_ruolo", { p_persona: persona, p_ruolo: ruolo, p_si: si }), "Ruolo non cambiato")
+    },
     async managerPersona(manager: string, persona: string, si: boolean): Promise<void> {
       if (si) ok(await db().from("manager_persone").upsert({ manager_id: manager, persona_id: persona }, { ignoreDuplicates: true }))
       else ok(await db().from("manager_persone").delete().eq("manager_id", manager).eq("persona_id", persona))

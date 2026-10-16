@@ -12,7 +12,7 @@ import { cn } from "../ui/cn"
 import { Dialogo } from "../ui/dialogo"
 import { Popover } from "../ui/popover"
 import { ICONE_CATEGORIA } from "./aspetto"
-import { GruppoAvatar, ScegliPersone } from "./persone"
+import { GruppoAvatar, NomiPersone, ScegliPersone } from "./persone"
 import { Chip, SelettoreCategoria, SelettoreData, SelettorePriorita, SelettoreRicorrenza } from "./selettori"
 
 const EVENTO = "attivita:nuova"
@@ -45,7 +45,7 @@ export function NuovaAttivita({
   onCreata?: (id: string) => void
 }) {
   useRichiedi("tasks")
-  const { config, azioni, me, base, categoria, sottocategoria, persona } = useAttivita()
+  const { config, azioni, me, base, categoria, sottocategoria } = useAttivita()
   const iniziale = (): BozzaTask => ({
     titolo: "",
     categoria_id: config.app,
@@ -144,7 +144,7 @@ export function NuovaAttivita({
             trigger={
               <Chip className="border-border" vuoto={!d.assegnatari?.length}>
                 {d.assegnatari?.length ? <GruppoAvatar ids={d.assegnatari} max={4} misura="xs" /> : <Users />}
-                {d.assegnatari?.length === 1 ? persona(d.assegnatari[0])?.nome : d.assegnatari?.length ? `${d.assegnatari.length} persone` : "Chi la fa"}
+                {d.assegnatari?.length ? <NomiPersone ids={d.assegnatari} /> : "Chi la fa"}
               </Chip>
             }
           >
