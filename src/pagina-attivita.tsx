@@ -17,7 +17,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
 import { colore } from "./colori"
 import { useNotificheApp } from "./componenti/notifiche"
@@ -70,7 +70,6 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
   useRichiedi("tasks", "notifiche")
   const { tasks, base, errore, me, persona, config, registraApertura, ricarica } = useAttivita()
   const parametri = useSearchParams()
-  const router = useRouter()
   const percorso = usePathname()
   const [vistaSalvata, setVistaSalvata] = usePersistito<Vista>(`${config.app}:vista`, "lista", eVista)
   const [filtri, setFiltri] = usePersistito<Filtri>(`${config.app}:filtri`, FILTRI_VUOTI, filtriValidi)
@@ -83,17 +82,20 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
   const vista: Vista = eVista(vistaUrl) ? vistaUrl : vistaSalvata
   const aperta = parametri.get("task")
 
+  // Solo l'indirizzo nel browser (Next aggiorna useSearchParams): niente giro sul server a ogni vista o attività aperta.
   const impostaUrl = useCallback(
     (cambi: Record<string, string | null>) => {
-      const p = new URLSearchParams(parametri.toString())
+      const p = new URLSearchParams(window.location.search)
       for (const [k, v] of Object.entries(cambi)) {
         if (v == null) p.delete(k)
         else p.set(k, v)
       }
       const q = p.toString()
-      router.replace(`${percorso}${q ? `?${q}` : ""}`, { scroll: false })
+      const url = `${percorso}${q ? `?${q}` : ""}`
+      if ("task" in cambi && cambi.task && !parametri.get("task")) window.history.pushState(null, "", url)
+      else window.history.replaceState(null, "", url)
     },
-    [parametri, percorso, router],
+    [parametri, percorso],
   )
   const apri = useCallback((id: string) => impostaUrl({ task: id }), [impostaUrl])
   const apriTask = useCallback((t: Task) => apri(t.id), [apri])

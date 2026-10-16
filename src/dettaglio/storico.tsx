@@ -99,9 +99,12 @@ export function Storico({ t }: { t: Task }) {
   const completateNelloStorico = new Set(voci.filter((v) => v.azione === "completata").map((v) => v.creato_at.slice(0, 16)))
   const soloCompletamenti = completamenti.filter((c) => !completateNelloStorico.has(c.completata_at.slice(0, 16)))
 
+  // La creazione di una sottotask è già la voce "ha aggiunto la sottotask" sulla principale.
+  const visibili = voci.filter((v) => !(v.azione === "creata" && v.task_id !== t.id))
+
   return (
     <div className="space-y-3 p-4">
-      {voci.map((v) => (
+      {visibili.map((v) => (
         <div key={v.id} className="flex gap-2.5 text-sm">
           <AvatarPersona id={v.attore} misura="sm" />
           <div className="min-w-0 flex-1">
@@ -121,7 +124,7 @@ export function Storico({ t }: { t: Task }) {
           ))}
         </div>
       ) : null}
-      {!voci.length && !soloCompletamenti.length ? (
+      {!visibili.length && !soloCompletamenti.length ? (
         <div className="flex flex-col items-center gap-2 py-10 text-sm text-muted-foreground">
           <History className="h-6 w-6 opacity-40" /> Nessuna modifica registrata.
         </div>
