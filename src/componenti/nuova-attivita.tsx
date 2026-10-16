@@ -1,7 +1,7 @@
 "use client"
 
 import { Building2, CalendarDays, Flag, ListPlus, Lock, Repeat, Users, X } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { colore } from "../colori"
 import { useAttivita, useRichiedi } from "../contesto"
 import { dataBreve, descriviRicorrenza, PRIORITA, servizioDaTesto } from "../regole"
@@ -50,7 +50,8 @@ export function NuovaAttivita({
     titolo: "",
     categoria_id: config.app,
     priorita: "normale",
-    assegnatari: [],
+    // Di base la fa chi la crea (si può cambiare da "Chi la fa").
+    assegnatari: me ? [me] : [],
     sottotask: [],
     checklist: [],
     ...bozza,
@@ -59,10 +60,18 @@ export function NuovaAttivita({
   const [sotto, setSotto] = useState("")
   const [invio, setInvio] = useState(false)
   const [altre, setAltre] = useState(false)
+  const sceltiAMano = useRef(false)
   useEffect(() => {
+    sceltiAMano.current = false
     if (aperta) setD(iniziale())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aperta])
+  // Se l'utente arriva dopo l'apertura, lo mette come assegnatario (a meno che non si sia già scelto qualcuno).
+  useEffect(() => {
+    if (!me || !aperta || bozza?.assegnatari || sceltiAMano.current) return
+    setD((x) => (x.assegnatari?.length ? x : { ...x, assegnatari: [me] }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, aperta])
 
   const cambia = (p: Partial<BozzaTask>) => setD((x) => ({ ...x, ...p }))
 
@@ -148,7 +157,15 @@ export function NuovaAttivita({
               </Chip>
             }
           >
-            <ScegliPersone titolo={d.personale ? "Attività personale: solo tu" : "Chi la fa"} scelti={d.assegnatari ?? []} soloIds={d.personale && me ? [me] : undefined} onCambia={(a) => cambia({ assegnatari: a })} />
+            <ScegliPersone
+              titolo={d.personale ? "Attività personale: solo tu" : "Chi la fa"}
+              scelti={d.assegnatari ?? []}
+              soloIds={d.personale && me ? [me] : undefined}
+              onCambia={(a) => {
+                sceltiAMano.current = true
+                cambia({ assegnatari: a })
+              }}
+            />
             {(d.assegnatari?.length ?? 0) > 1 ? (
               <label className="mt-2 flex items-center justify-between gap-2 border-t border-border px-1 pt-2 text-xs">
                 Fatta quando tutti hanno fatto la loro parte
