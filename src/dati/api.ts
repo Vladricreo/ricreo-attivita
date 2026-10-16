@@ -11,6 +11,7 @@ import type {
   ModificaTask,
   Notifica,
   Persona,
+  Preferenze,
   Reazione,
   Sottocategoria,
   Stato,
@@ -51,6 +52,7 @@ export type Base = {
   stati: Stato[]
   app: AppRicreo[]
   manager: ManagerPersona[]
+  preferenze: Preferenze
 }
 
 export function creaApi(sb: SupabaseClient<any, any, any>) {
@@ -63,13 +65,14 @@ export function creaApi(sb: SupabaseClient<any, any, any>) {
     },
 
     async base(): Promise<Base> {
-      const [persone, categorie, sottocategorie, stati, app, manager] = await Promise.all([
+      const [persone, categorie, sottocategorie, stati, app, manager, preferenze] = await Promise.all([
         db().from("v_persone").select("*").order("nome"),
         db().from("categorie").select("*").order("ordine"),
         db().from("sottocategorie").select("*").order("ordine"),
         db().from("stati").select("*").order("ordine"),
         db().from("v_app").select("*").order("ordine"),
         db().from("manager_persone").select("manager_id, persona_id"),
+        db().from("preferenze").select("vista_iniziale").maybeSingle(),
       ])
       return {
         persone: ok(persone, "Errore caricamento persone") as Persona[],
@@ -78,7 +81,13 @@ export function creaApi(sb: SupabaseClient<any, any, any>) {
         stati: ok(stati) as Stato[],
         app: ok(app) as AppRicreo[],
         manager: ok(manager) as ManagerPersona[],
+        // Le preferenze non bloccano la pagina (es. migration non ancora applicata): si parte da quelle vuote.
+        preferenze: { vista_iniziale: null, ...(preferenze.error ? null : (preferenze.data as Preferenze | null)) },
       }
+    },
+
+    async salvaPreferenze(utente: string, p: Partial<Preferenze>): Promise<void> {
+      ok(await db().from("preferenze").upsert({ user_id: utente, ...p, aggiornata_at: new Date().toISOString() }), "Errore salvataggio preferenze")
     },
 
     /** Aperte, archiviate e completate da `completateDa` (le altre si caricano dall'archivio). */

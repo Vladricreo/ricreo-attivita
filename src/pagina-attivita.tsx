@@ -10,6 +10,7 @@ import {
   LayoutList,
   ListFilter,
   LoaderCircle,
+  Pin,
   Plus,
   Search,
   Settings2,
@@ -27,7 +28,8 @@ import { useAttivita, useRichiedi } from "./contesto"
 import { PannelloTask } from "./dettaglio/pannello"
 import { filtra, FILTRI_VUOTI, filtriValidi, quantiFiltri, usePersistito, type Filtri } from "./filtri"
 import { aggiungiGiorniIso, eAdmin, eManager, fascia, fatta, oggiIso, ORDINE_PRIORITA, PRIORITA } from "./regole"
-import type { Task } from "./tipi"
+import type { Task, VistaIniziale } from "./tipi"
+import { avviso } from "./ui/avvisi"
 import { Bottone } from "./ui/bottone"
 import { cn } from "./ui/cn"
 import { Menu, MenuEtichetta, MenuSeparatore, MenuSpunta } from "./ui/menu"
@@ -53,10 +55,13 @@ const VISTE: { id: Vista; label: string; icona: LucideIcon; secondaria?: boolean
   { id: "impostazioni", label: "Impostazioni", icona: Settings2, secondaria: true },
 ]
 const eVista = (v: unknown): v is Vista => VISTE.some((x) => x.id === v)
+const etichettaVista = (v: Vista) => VISTE.find((x) => x.id === v)?.label ?? v
 
 /**
  * Pagina Attività completa (la stessa in tutte le app). L'attività aperta e la vista stanno
  * nell'indirizzo (?task=…&vista=…), così i link delle notifiche aprono il punto giusto.
+ * Senza ?vista si apre la vista iniziale scelta dalla persona (salvata nel database, vale in tutte
+ * le app) o, se non l'ha scelta, l'ultima usata in quest'app.
  */
 export function PaginaAttivita(props: { titolo?: string; descrizione?: string; azioni?: ReactNode }) {
   return (
@@ -68,18 +73,22 @@ export function PaginaAttivita(props: { titolo?: string; descrizione?: string; a
 
 function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { titolo?: string; descrizione?: string; azioni?: ReactNode }) {
   useRichiedi("tasks", "notifiche")
-  const { tasks, base, errore, me, persona, config, registraApertura, ricarica } = useAttivita()
+  const { tasks, base, errore, me, persona, config, registraApertura, ricarica, salvaPreferenze } = useAttivita()
   const parametri = useSearchParams()
   const percorso = usePathname()
   const [vistaSalvata, setVistaSalvata] = usePersistito<Vista>(`${config.app}:vista`, "lista", eVista)
   const [filtri, setFiltri] = usePersistito<Filtri>(`${config.app}:filtri`, FILTRI_VUOTI, filtriValidi)
   const [raggruppa, setRaggruppa] = usePersistito<Raggruppa>(`${config.app}:raggruppa`, "fascia")
   const [colonne, setColonne] = usePersistito<ColonneBacheca>(`${config.app}:colonne`, "stato")
+  const [scelta, setScelta] = useState<Vista | null>(null)
   const [nuova, setNuova] = useState(false)
   const { tutte: notifiche } = useNotificheApp()
 
   const vistaUrl = parametri.get("vista")
-  const vista: Vista = eVista(vistaUrl) ? vistaUrl : vistaSalvata
+  const iniziale = base?.preferenze.vista_iniziale ?? null
+  const vista: Vista = eVista(vistaUrl) ? vistaUrl : (scelta ?? iniziale ?? vistaSalvata)
+  // Finché le preferenze non arrivano non si sa con che vista aprire: nessuna scheda evidenziata.
+  const vistaNota = !!base || !!errore || eVista(vistaUrl) || !!scelta
   const aperta = parametri.get("task")
 
   // Solo l'indirizzo nel browser (Next aggiorna useSearchParams): niente giro sul server a ogni vista o attività aperta.
@@ -100,8 +109,14 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
   const apri = useCallback((id: string) => impostaUrl({ task: id }), [impostaUrl])
   const apriTask = useCallback((t: Task) => apri(t.id), [apri])
   const cambiaVista = (v: Vista) => {
+    setScelta(v)
     setVistaSalvata(v)
     impostaUrl({ vista: null })
+  }
+  const scegliIniziale = async (v: VistaIniziale | null) => {
+    if (v) cambiaVista(v)
+    if (await salvaPreferenze({ vista_iniziale: v }))
+      avviso.ok(v ? `Attività si aprirà in ${etichettaVista(v)}, in tutte le app` : "Attività si aprirà nell'ultima vista usata")
   }
 
   useEffect(() => {
@@ -174,12 +189,37 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
       {/* Viste */}
       <div className="-mx-4 flex items-center gap-1 overflow-x-auto border-b border-border px-4 sm:mx-0 sm:px-0">
         {principali.map((v) => (
-          <SchedaVista key={v.id} v={v} attiva={vista === v.id} onClick={() => cambiaVista(v.id)} />
+          <SchedaVista key={v.id} v={v} attiva={vistaNota && vista === v.id} onClick={() => cambiaVista(v.id)} />
         ))}
         <span className="mx-1 h-5 w-px shrink-0 bg-border" />
         {secondarie.map((v) => (
-          <SchedaVista key={v.id} v={v} attiva={vista === v.id} onClick={() => cambiaVista(v.id)} conteggio={v.id === "inbox" ? notificheNonLette : undefined} soloIcona={v.id === "impostazioni"} />
+          <SchedaVista key={v.id} v={v} attiva={vistaNota && vista === v.id} onClick={() => cambiaVista(v.id)} conteggio={v.id === "inbox" ? notificheNonLette : undefined} soloIcona={v.id === "impostazioni"} />
         ))}
+        {base ? (
+          <Menu
+            trigger={
+              <button
+                type="button"
+                title="Vista con cui si apre Attività, in tutte le app"
+                className="ml-auto inline-flex shrink-0 items-center gap-1.5 px-2.5 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Pin className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{iniziale ? `Si apre in: ${etichettaVista(iniziale)}` : "Vista iniziale"}</span>
+              </button>
+            }
+          >
+            <MenuEtichetta>Apri sempre Attività in (tutte le app)</MenuEtichetta>
+            {principali.map((v) => (
+              <MenuSpunta key={v.id} attiva={iniziale === v.id} onCambia={() => void scegliIniziale(v.id as VistaIniziale)}>
+                <v.icona className="h-4 w-4 text-muted-foreground" /> {v.label}
+              </MenuSpunta>
+            ))}
+            <MenuSeparatore />
+            <MenuSpunta attiva={!iniziale} onCambia={() => void scegliIniziale(null)}>
+              L&apos;ultima che ho usato
+            </MenuSpunta>
+          </Menu>
+        ) : null}
       </div>
 
       {conFiltri ? (

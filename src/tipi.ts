@@ -212,6 +212,12 @@ export type AppRicreo = { slug: string; nome: string; url: string | null; logo_u
 
 export type ManagerPersona = { manager_id: string; persona_id: string }
 
+/** Viste con cui si può aprire la pagina Attività. */
+export type VistaIniziale = "lista" | "bacheca" | "calendario" | "gantt" | "dashboard"
+
+/** Preferenze della persona, uguali in tutte le app. vista_iniziale null = l'ultima usata in quell'app. */
+export type Preferenze = { vista_iniziale: VistaIniziale | null }
+
 export type VoceChecklist = {
   id: string
   task_id: string

@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { creaApi, messaggioErrore, type Api, type Base } from "./dati/api"
 import { aggiungiGiorniIso, oggiIso, statoDiTipo } from "./regole"
-import type { BozzaTask, Categoria, ConfigAttivita, ModificaTask, Notifica, Persona, Sottocategoria, Stato, Task } from "./tipi"
+import type { BozzaTask, Categoria, ConfigAttivita, ModificaTask, Notifica, Persona, Preferenze, Sottocategoria, Stato, Task } from "./tipi"
 import { Avvisi, avviso } from "./ui/avvisi"
 import { ProviderSuggerimenti } from "./ui/suggerimento"
 
@@ -48,6 +48,8 @@ type ValoreAttivita = {
   ricarica: (cosa?: Richiesta | "base") => Promise<void>
   /** Applica subito una modifica locale (bacheca, Gantt) prima della risposta del database. */
   ritocca: (id: string, patch: Partial<Task>) => void
+  /** Preferenze della persona (in tutte le app): si applicano subito, poi si salvano. */
+  salvaPreferenze: (p: Partial<Preferenze>) => Promise<boolean>
   apri: (id: string) => void
   registraApertura: (fn: ((id: string) => void) | null) => void
   azioni: Azioni
@@ -219,6 +221,23 @@ export function AttivitaProvider({ config, children }: { config: ConfigAttivita;
     [mappe.stati],
   )
 
+  const salvaPreferenze = useCallback(
+    async (p: Partial<Preferenze>) => {
+      if (!me) return false
+      const prima = base?.preferenze
+      setBase((b) => (b ? { ...b, preferenze: { ...b.preferenze, ...p } } : b))
+      try {
+        await api.salvaPreferenze(me, p)
+        return true
+      } catch (e) {
+        if (prima) setBase((b) => (b ? { ...b, preferenze: prima } : b))
+        avviso.errore(messaggioErrore(e))
+        return false
+      }
+    },
+    [api, me, base?.preferenze],
+  )
+
   const azioni = useMemo<Azioni>(() => {
     const prova = async (fn: () => Promise<void>, ricaricaDopo = true) => {
       try {
@@ -324,6 +343,7 @@ export function AttivitaProvider({ config, children }: { config: ConfigAttivita;
       richiedi,
       ricarica,
       ritocca,
+      salvaPreferenze,
       apri: (id) => {
         if (apertura.current) apertura.current(id)
         else {
@@ -337,7 +357,7 @@ export function AttivitaProvider({ config, children }: { config: ConfigAttivita;
       },
       azioni,
     }),
-    [config, api, me, base, tasks, notifiche, errore, perId, mappe, richiedi, ricarica, ritocca, azioni],
+    [config, api, me, base, tasks, notifiche, errore, perId, mappe, richiedi, ricarica, ritocca, salvaPreferenze, azioni],
   )
 
   return (
