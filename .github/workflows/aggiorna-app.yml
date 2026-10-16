@@ -1,0 +1,92 @@
+# A ogni push su main del modulo, porta il submodule all'ultima versione in tutte le app Ricreo
+# (commit diretto su main di ogni app: Coolify ripubblica da solo).
+#
+# Serve il secret SYNC_TOKEN in questo repo (Settings → Secrets and variables → Actions): un token
+# GitHub con permesso "Contents: Read and write" sui repo delle app qui sotto (lo stesso usato da
+# ricreo-schema va bene se include anche Ricreo-Finance e Product-console).
+# Un'app senza il modulo montato in quel percorso viene saltata; non si torna mai a una versione
+# più vecchia di quella che l'app ha già.
+
+name: Aggiorna il modulo nelle app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Un giro alla volta: se arrivano più push, resta solo il più recente in coda.
+concurrency:
+  group: aggiorna-app
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - repo: Ricreo-Finance
+            percorso: modules/attivita
+          - repo: Ricreo-Inventory
+            percorso: client/modules/attivita
+          - repo: Ricreo-print-farm
+            percorso: client/modules/attivita
+          - repo: Product-console
+            percorso: modules/attivita
+    env:
+      OWNER: Vladricreo
+      REPO: ${{ matrix.repo }}
+      PERCORSO: ${{ matrix.percorso }}
+    steps:
+      - name: Storia del modulo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: modulo
+
+      - name: Aggiorna il puntatore su main
+        env:
+          TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TOKEN}" ]; then
+            echo "::error::Manca il secret SYNC_TOKEN in questo repo."
+            exit 1
+          fi
+          git clone -q --filter=blob:none --sparse "https://x-access-token:${TOKEN}@github.com/${OWNER}/${REPO}.git" app
+          cd app
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for tentativo in 1 2 3 4 5; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            ATTUALE=$(git ls-tree origin/main "${PERCORSO}" | awk '$2 == "commit" { print $3 }')
+            if [ -z "${ATTUALE}" ]; then
+              echo "${REPO}: il modulo non è montato in ${PERCORSO}, salto."
+              exit 0
+            fi
+            if [ "${ATTUALE}" = "${GITHUB_SHA}" ]; then
+              echo "${REPO}: già alla versione ${GITHUB_SHA:0:7}."
+              exit 0
+            fi
+            if ! git -C ../modulo merge-base --is-ancestor "${ATTUALE}" "${GITHUB_SHA}" 2>/dev/null; then
+              echo "::warning::${REPO} è su ${ATTUALE:0:7}, che non viene prima di ${GITHUB_SHA:0:7}: non lo tocco."
+              exit 0
+            fi
+            git update-index --cacheinfo "160000,${GITHUB_SHA},${PERCORSO}"
+            git commit -q -m "Attività: aggiorna il modulo a ${GITHUB_SHA:0:7}" \
+              -m "$(git -C ../modulo log --format='- %s' "${ATTUALE}..${GITHUB_SHA}" | head -20)"
+            if git push -q origin HEAD:main; then
+              echo "${REPO}: ${ATTUALE:0:7} → ${GITHUB_SHA:0:7}"
+              exit 0
+            fi
+            echo "${REPO}: main è cambiato nel frattempo, riprovo (${tentativo})."
+            sleep $((tentativo * 3))
+          done
+          echo "::error::${REPO}: push non riuscito dopo 5 tentativi."
+          exit 1

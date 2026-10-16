@@ -93,13 +93,22 @@ submodule pubblici). Il job del cestino gira in una sola app (Finance, nel cron 
 
 ## Aggiornare il modulo
 
-Si lavora dentro `modules/attivita` di un'app qualsiasi, su `main`:
+Si lavora dentro `modules/attivita` di un'app qualsiasi, sul ramo `main` del modulo:
 
 ```bash
 cd modules/attivita
+git checkout main && git pull
+# … modifiche …
 git add -A && git commit -m "…" && git push
-cd ../..
-git add modules/attivita && git commit -m "Attività: aggiorna il modulo"
 ```
 
-Nelle altre app: `git submodule update --remote modules/attivita` e commit del puntatore.
+Fatto il push, il workflow `.github/workflows/aggiorna-app.yml` porta il puntatore all'ultima versione su
+`main` di **tutte** le app (Finance, Inventory, Print farm, Product console) con un commit
+"Attività: aggiorna il modulo a …", e Coolify le ripubblica. Nell'app dove hai lavorato basta poi `git pull`.
+Il workflow non torna mai indietro: se un'app è già su una versione più nuova, la lascia stare.
+
+- Serve il secret `SYNC_TOKEN` in questo repo (Settings → Secrets and variables → Actions): un token GitHub
+  con "Contents: Read and write" sui quattro repo delle app. Si può rilanciare a mano da Actions.
+- Una nuova app che monta il modulo va aggiunta alla `matrix` del workflow.
+- In locale `predev` (prima di `bun dev`) porta il modulo all'ultima versione di `main` in tutte le app,
+  così si vedono subito anche le modifiche fatte da un'altra app.

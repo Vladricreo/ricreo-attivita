@@ -5,8 +5,11 @@ print-farm, product-console, preventivatore). Qui si cambia solo la pagina Attiv
 
 ## Git
 - Lavora sempre su `main`: niente branch, worktree o pull request (salvo richiesta esplicita).
-- Dopo un push qui, ogni app va aggiornata (`git add modules/attivita` + commit nell'app): finché non
-  lo fai, l'app resta sulla versione precedente.
+- Prima di modificare: `git checkout main && git pull` dentro il modulo (i submodule possono essere su un
+  commit staccato o su un `main` locale rimasto indietro).
+- Un push su `main` qui aggiorna il puntatore in tutte le app con un commit su `main` di ognuna (workflow
+  `.github/workflows/aggiorna-app.yml`, secret `SYNC_TOKEN`) e quindi le ripubblica tutte: niente push di
+  lavoro a metà. Non serve aggiornare il puntatore a mano nelle app.
 
 ## Pubblico
 - Mai chiavi, token, URL di progetto, email, nomi di clienti o dati veri: né nel codice né nei test.
