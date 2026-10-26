@@ -12,6 +12,7 @@ import {
   CircleDot,
   Clock,
   Columns3,
+  Ellipsis,
   Flag,
   Inbox,
   Layers,
@@ -31,7 +32,7 @@ import {
   type LucideIcon,
 } from "lucide-react"
 import { usePathname, useSearchParams } from "next/navigation"
-import { Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react"
+import { forwardRef, Suspense, useCallback, useEffect, useMemo, useState, type ButtonHTMLAttributes, type ReactNode } from "react"
 import { colore } from "./colori"
 import { useNotificheApp } from "./componenti/notifiche"
 import { NuovaAttivita } from "./componenti/nuova-attivita"
@@ -45,7 +46,7 @@ import { avviso } from "./ui/avvisi"
 import { Bottone } from "./ui/bottone"
 import { Interruttore } from "./ui/campi"
 import { cn } from "./ui/cn"
-import { Menu, MenuEtichetta, MenuSeparatore, MenuSpunta } from "./ui/menu"
+import { Menu, MenuEtichetta, MenuSeparatore, MenuSpunta, MenuVoce } from "./ui/menu"
 import { Popover } from "./ui/popover"
 import { VistaArchivio } from "./viste/archivio"
 import { COLONNE_BACHECA, VistaBacheca, type ColonneBacheca } from "./viste/bacheca"
@@ -207,6 +208,22 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
 
   const principali = VISTE.filter((v) => !v.secondaria)
   const secondarie = VISTE.filter((v) => v.secondaria)
+  const secondariaAttiva = vistaNota ? secondarie.find((v) => v.id === vista) : undefined
+  // Scelta della vista con cui si apre Attività (menu del segnaposto su desktop, menu "Altro" su telefono)
+  const vociIniziale = (
+    <>
+      <MenuEtichetta>Apri sempre Attività in (tutte le app)</MenuEtichetta>
+      {principali.map((v) => (
+        <MenuSpunta key={v.id} attiva={iniziale === v.id} onCambia={() => void scegliIniziale(v.id as VistaIniziale)}>
+          <v.icona className="h-4 w-4 text-muted-foreground" /> {v.label}
+        </MenuSpunta>
+      ))}
+      <MenuSeparatore />
+      <MenuSpunta attiva={!iniziale} onCambia={() => void scegliIniziale(null)}>
+        L&apos;ultima che ho usato
+      </MenuSpunta>
+    </>
+  )
   const conFiltri = vista !== "inbox" && vista !== "impostazioni"
 
   return (
@@ -224,8 +241,42 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
         </div>
       </div>
 
-      {/* Viste */}
-      <div className="relative -mx-4 flex items-center gap-1 overflow-x-auto border-b [scrollbar-width:none] border-border px-4 sm:mx-0 sm:px-0">
+      {/* Viste su telefono: le principali in colonne uguali (icona sopra, nome sotto); Inbox, Archivio,
+          Impostazioni e la vista iniziale nel menu "Altro", che prende icona e nome della vista secondaria aperta */}
+      <div className="-mx-4 grid grid-cols-6 border-b border-border sm:hidden">
+        {principali.map((v) => (
+          <SchedaMobile key={v.id} icona={v.icona} etichetta={v.label} attiva={vistaNota && vista === v.id} onClick={() => cambiaVista(v.id)} />
+        ))}
+        <Menu
+          trigger={
+            <SchedaMobile
+              icona={secondariaAttiva?.icona ?? Ellipsis}
+              etichetta={secondariaAttiva?.label ?? "Altro"}
+              attiva={!!secondariaAttiva}
+              conteggio={notificheNonLette}
+              aria-label="Altre viste"
+            />
+          }
+        >
+          {secondarie.map((v) => (
+            <MenuVoce key={v.id} onSeleziona={() => cambiaVista(v.id)} className={cn(vistaNota && vista === v.id && "bg-accent font-medium")}>
+              <v.icona className="text-muted-foreground" /> {v.label}
+              {v.id === "inbox" && notificheNonLette ? (
+                <span className="ml-auto rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-4 text-primary-foreground">{notificheNonLette > 99 ? "99+" : notificheNonLette}</span>
+              ) : null}
+            </MenuVoce>
+          ))}
+          {base ? (
+            <>
+              <MenuSeparatore />
+              {vociIniziale}
+            </>
+          ) : null}
+        </Menu>
+      </div>
+
+      {/* Viste da sm in su: schede in riga */}
+      <div className="relative hidden items-center gap-1 overflow-x-auto border-b [scrollbar-width:none] border-border sm:flex">
         {principali.map((v) => (
           <SchedaVista key={v.id} v={v} attiva={vistaNota && vista === v.id} onClick={() => cambiaVista(v.id)} />
         ))}
@@ -246,16 +297,7 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
               </button>
             }
           >
-            <MenuEtichetta>Apri sempre Attività in (tutte le app)</MenuEtichetta>
-            {principali.map((v) => (
-              <MenuSpunta key={v.id} attiva={iniziale === v.id} onCambia={() => void scegliIniziale(v.id as VistaIniziale)}>
-                <v.icona className="h-4 w-4 text-muted-foreground" /> {v.label}
-              </MenuSpunta>
-            ))}
-            <MenuSeparatore />
-            <MenuSpunta attiva={!iniziale} onCambia={() => void scegliIniziale(null)}>
-              L&apos;ultima che ho usato
-            </MenuSpunta>
+            {vociIniziale}
           </Menu>
         ) : null}
       </div>
@@ -540,6 +582,33 @@ function SchedaVista({ v, attiva, onClick, conteggio, soloIcona }: { v: (typeof 
     </button>
   )
 }
+
+/** Scheda della barra delle viste su telefono: icona sopra e nome sotto (fa anche da trigger del menu "Altro"). */
+const SchedaMobile = forwardRef<
+  HTMLButtonElement,
+  ButtonHTMLAttributes<HTMLButtonElement> & { icona: LucideIcon; etichetta: string; attiva: boolean; conteggio?: number }
+>(function SchedaMobile({ icona: Icona, etichetta, attiva, conteggio, className, ...props }, ref) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className={cn(
+        "-mb-px flex min-w-0 flex-col items-center gap-0.5 border-b-2 px-0.5 pb-1.5 pt-2 text-[11px] font-medium transition-colors",
+        attiva ? "border-primary text-foreground" : "border-transparent text-muted-foreground",
+        className,
+      )}
+      {...props}
+    >
+      <span className="relative">
+        <Icona className="h-5 w-5" />
+        {conteggio ? (
+          <span className="absolute -right-2.5 -top-1.5 rounded-full bg-primary px-1 text-[9px] font-semibold leading-[14px] text-primary-foreground">{conteggio > 99 ? "99+" : conteggio}</span>
+        ) : null}
+      </span>
+      <span className="max-w-full truncate">{etichetta}</span>
+    </button>
+  )
+})
 
 const SCELTE_PERSONALI = [
   ["tutte", "Insieme"],
