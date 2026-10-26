@@ -5,11 +5,13 @@ import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
+  pointerWithin,
   PointerSensor,
   TouchSensor,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -42,6 +44,21 @@ export const COLONNE_BACHECA: { id: ColonneBacheca; label: string }[] = [
 type Colonna = { id: string; titolo: ReactNode; punto?: string; bozza: Partial<BozzaTask>; ids: string[] }
 
 const SENZA = "__nessuno__"
+
+/**
+ * Prima la colonna sotto il puntatore, poi la scheda più vicina dentro quella colonna (sotto l'ultima scheda: la
+ * colonna, cioè in fondo). Con colonne alte e quasi vuote "closestCorners" da solo sceglieva le schede della colonna
+ * accanto e la scheda non cambiava colonna. Senza puntatore (tastiera) resta "closestCorners".
+ */
+const collisione: CollisionDetection = (args) => {
+  const colonna = pointerWithin({ ...args, droppableContainers: args.droppableContainers.filter((c) => String(c.id).startsWith("col:")) })[0]
+  if (!colonna || !args.pointerCoordinates) return closestCorners(args)
+  const prefisso = `${String(colonna.id).slice(4)}::`
+  const schede = args.droppableContainers.filter((c) => String(c.id).startsWith(prefisso))
+  const fondo = Math.max(...schede.map((c) => args.droppableRects.get(c.id)?.bottom ?? -Infinity))
+  if (!schede.length || args.pointerCoordinates.y > fondo) return [colonna]
+  return closestCorners({ ...args, droppableContainers: schede })
+}
 
 export function VistaBacheca({
   filtrate,
@@ -185,7 +202,7 @@ export function VistaBacheca({
       const i = lista.indexOf(id)
       const j = lista.indexOf(overId)
       if (i >= 0 && j >= 0 && i !== j) lista = arrayMove(lista, i, j)
-    }
+    } else if (colOver === col) lista = [...lista.filter((x) => x !== id), id] // sotto l'ultima scheda: in fondo
     const pos = lista.indexOf(id)
     const prima = pos > 0 ? (perId.get(lista[pos - 1])?.ordine ?? null) : null
     const dopo = pos < lista.length - 1 ? (perId.get(lista[pos + 1])?.ordine ?? null) : null
@@ -220,7 +237,7 @@ export function VistaBacheca({
   const attivoTask = attivo ? perId.get(attivo.id) : null
 
   return (
-    <DndContext sensors={sensori} collisionDetection={closestCorners} onDragStart={inizio} onDragOver={sopra} onDragEnd={fine} onDragCancel={() => (setAttivo(null), setLocali(null), (corrente.current = null))}>
+    <DndContext sensors={sensori} collisionDetection={collisione} onDragStart={inizio} onDragOver={sopra} onDragEnd={fine} onDragCancel={() => (setAttivo(null), setLocali(null), (corrente.current = null))}>
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 sm:mx-0 sm:snap-none sm:px-0">
         {viste.map((c) => (
           <ColonnaBacheca key={c.id} colonna={c} onApri={onApri} tutte={tutte} />
@@ -242,13 +259,13 @@ function ColonnaBacheca({ colonna, onApri, tutte }: { colonna: Colonna; onApri: 
   const percorsi = colonna.ids.map((id) => perId.get(id)?.copertina_percorso)
   const url = useUrlFirmati(percorsi)
   return (
-    <div className="flex w-[85vw] max-w-[20rem] shrink-0 snap-start flex-col rounded-xl border border-border bg-muted/30 sm:w-72">
+    <div ref={setNodeRef} className="flex w-[85vw] max-w-[20rem] shrink-0 snap-start flex-col rounded-xl border border-border bg-muted/30 sm:w-72">
       <div className="flex items-center gap-2 px-3 pb-2 pt-3">
         {colonna.punto ? <span className={cn("h-2 w-2 rounded-full", colonna.punto)} /> : null}
         <span className="min-w-0 flex-1 truncate text-sm font-semibold">{colonna.titolo}</span>
         <span className="rounded-full bg-background px-1.5 text-[11px] font-medium tabular-nums text-muted-foreground">{colonna.ids.length}</span>
       </div>
-      <div ref={setNodeRef} className={cn("flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 transition-colors", isOver && "bg-primary/5")}>
+      <div className={cn("flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2 transition-colors", isOver && "bg-primary/5")}>
         <SortableContext items={colonna.ids.map((id) => `${colonna.id}::${id}`)} strategy={verticalListSortingStrategy}>
           {colonna.ids.map((id) => {
             const t = perId.get(id)
