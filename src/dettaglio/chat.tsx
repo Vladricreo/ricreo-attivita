@@ -307,7 +307,7 @@ function Messaggio({
     )
 
   return (
-    <div className={cn("group flex gap-2", mio ? "flex-row-reverse" : "flex-row", raggruppato ? "pt-0.5" : "pt-2")}>
+    <div tabIndex={-1} className={cn("group flex gap-2 outline-none", mio ? "flex-row-reverse" : "flex-row", raggruppato ? "pt-0.5" : "pt-2")}>
       <div className="w-7 shrink-0">{!mio && !raggruppato ? <AvatarPersona id={c.autore} misura="md" className="h-7 w-7" /> : null}</div>
       <div className={cn("flex min-w-0 max-w-[85%] flex-col", mio ? "items-end" : "items-start")}>
         {!raggruppato ? (
@@ -362,10 +362,10 @@ function Messaggio({
             )}
             {c.testo ? <TestoMessaggio testo={c.testo} menzioni={c.menzioni} /> : null}
           </div>
-          {/* Azioni al passaggio (sempre visibili su mobile con un tocco lungo non serve: icone piccole) */}
+          {/* Azioni al passaggio del mouse; su touch compaiono toccando il messaggio (che prende il focus) */}
           <div
             className={cn(
-              "absolute -top-3 flex items-center gap-0.5 rounded-full border border-border bg-background p-0.5 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 focus-within:opacity-100",
+              "absolute -top-3 flex items-center gap-0.5 rounded-full border border-border bg-background p-0.5 opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [&_button]:p-1.5 sm:[&_button]:p-1",
               mio ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2",
             )}
           >
@@ -567,7 +567,8 @@ function Compositore({
         return
       }
     }
-    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+    // Invio manda il messaggio; su touch (niente Maiusc+Invio) va a capo e si manda col bottone
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer: coarse)").matches) {
       e.preventDefault()
       void invia()
     }
@@ -593,7 +594,7 @@ function Compositore({
 
   return (
     <div
-      className={cn("relative border-t border-border bg-background p-2 sm:p-3", sopra && "bg-primary/5")}
+      className={cn("relative border-t border-border bg-background p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:p-3 sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]", sopra && "bg-primary/5")}
       onDragOver={(e) => {
         if (e.dataTransfer.types.includes("Files")) {
           e.preventDefault()

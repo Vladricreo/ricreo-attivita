@@ -123,7 +123,7 @@ function RigaSottotask({ s, numero, inAttesa, onApri }: { s: Task; numero: numbe
       <button
         type="button"
         onClick={() => void azioni.elimina(s)}
-        className="shrink-0 rounded p-1 text-muted-foreground opacity-0 hover:bg-accent hover:text-destructive group-hover:opacity-100"
+        className="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive sm:p-1 sm:opacity-0 sm:group-hover:opacity-100"
         aria-label="Elimina sottotask"
       >
         <Trash2 className="h-3.5 w-3.5" />

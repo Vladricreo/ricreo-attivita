@@ -697,7 +697,7 @@ function Collegamenti({ t }: { t: Task }) {
               )}
               <button
                 type="button"
-                className="opacity-0 group-hover:opacity-100"
+                className="-m-1 p-1 sm:opacity-0 sm:group-hover:opacity-100"
                 onClick={async () => {
                   try {
                     await api.scollega(c.id)

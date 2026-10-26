@@ -137,16 +137,19 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
   // Trascinamento delle barre (sposta, allunga a sinistra/destra) e disegno su righe senza date.
   const giu = (e: PE<HTMLElement>, t: Task, modo: Trascina["modo"]) => {
     if (e.button !== 0) return
+    // Su touch niente trascinamento (il dito scorre la timeline): resta solo il tocco sulla barra, che apre l'attività
+    const tocco = e.pointerType === "touch"
+    if (tocco && modo !== "sposta") return
     e.stopPropagation()
     const d = date(t)
     const riga = (e.currentTarget.closest("[data-riga]") as HTMLElement) ?? e.currentTarget
     const g0 = giornoDa(e.clientX, riga)
     trascina.current = { id: t.id, modo, x0: e.clientX, da: d?.da ?? g0, a: d?.a ?? g0, mosso: false, giorno0: g0 }
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+    if (!tocco) (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
   }
   const muovi = (e: PE<HTMLElement>) => {
     const s = trascina.current
-    if (!s) return
+    if (!s || e.pointerType === "touch") return
     const delta = Math.round((e.clientX - s.x0) / w)
     if (!delta && !s.mosso) return
     s.mosso = true
@@ -171,7 +174,7 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
   const su = (t: Task) => {
     const s = trascina.current
     trascina.current = null
-    if (!s) return
+    if (!s || s.id !== t.id) return
     if (!s.mosso) {
       if (s.modo !== "disegna") onApri(t)
       return
@@ -234,6 +237,12 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
     }
     return { mesi, celle }
   }, [origine, giorni, oggi])
+
+  // Gesto interrotto (es. il browser prende lo scorrimento): via lo stato del trascinamento
+  const annulla = () => {
+    trascina.current = null
+    setAnteprima({})
+  }
 
   useEffect(() => {
     const fine = () => {
@@ -351,6 +360,7 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
                   onPointerDown={(e) => !d && giu(e, t, "disegna")}
                   onPointerMove={muovi}
                   onPointerUp={() => su(t)}
+                  onPointerCancel={annulla}
                 >
                   {d ? (
                     <Suggerimento testo={`${t.titolo} · ${d.da === d.a ? dataBreve(d.a) : `${dataBreve(d.da)} → ${dataBreve(d.a)}`}`}>
@@ -358,8 +368,9 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
                         onPointerDown={(e) => giu(e, t, "sposta")}
                         onPointerMove={muovi}
                         onPointerUp={() => su(t)}
+                        onPointerCancel={annulla}
                         className={cn(
-                          "absolute top-1.5 flex cursor-grab touch-none select-none items-center overflow-hidden rounded-md text-[11px] font-medium text-white shadow-sm active:cursor-grabbing",
+                          "absolute top-1.5 flex cursor-grab select-none [@media(pointer:fine)]:touch-none items-center overflow-hidden rounded-md text-[11px] font-medium text-white shadow-sm active:cursor-grabbing",
                           c.barra,
                           fatta(t) && "opacity-50",
                           r.livello && "top-2.5 h-4",

@@ -100,7 +100,7 @@ function VoceRiga({ v, onSpunta, onTesto, onElimina }: { v: VoceChecklist; onSpu
       <button
         type="button"
         onClick={onSpunta}
-        className={cn("flex h-4 w-4 shrink-0 items-center justify-center rounded border", v.fatta_at ? "border-emerald-500 bg-emerald-500 text-white" : "border-muted-foreground/40 hover:border-primary")}
+        className={cn("relative flex h-4 w-4 shrink-0 items-center justify-center rounded border after:absolute after:-inset-2.5 after:content-['']", v.fatta_at ? "border-emerald-500 bg-emerald-500 text-white" : "border-muted-foreground/40 hover:border-primary")}
         aria-label={v.fatta_at ? "Segna da fare" : "Segna fatta"}
       >
         {v.fatta_at ? <Check className="h-3 w-3" /> : null}
@@ -112,7 +112,7 @@ function VoceRiga({ v, onSpunta, onTesto, onElimina }: { v: VoceChecklist; onSpu
         onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         className={cn("h-7 min-w-0 flex-1 bg-transparent text-sm outline-none", v.fatta_at && "text-muted-foreground line-through")}
       />
-      <button type="button" onClick={onElimina} className="rounded p-1 text-muted-foreground opacity-0 hover:text-destructive group-hover:opacity-100" aria-label="Togli voce">
+      <button type="button" onClick={onElimina} className="rounded p-1.5 text-muted-foreground hover:text-destructive sm:p-1 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Togli voce">
         <X className="h-3.5 w-3.5" />
       </button>
     </div>

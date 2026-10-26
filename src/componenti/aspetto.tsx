@@ -165,7 +165,7 @@ export function SpuntaCompleta({
           onClick()
         }}
         className={cn(
-          "group/spunta flex shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+          "group/spunta relative flex shrink-0 items-center justify-center rounded-full border-2 transition-colors after:absolute after:-inset-2.5 after:content-['']",
           misura === "sm" ? "h-4 w-4" : "h-5 w-5",
           fatta
             ? "border-emerald-500 bg-emerald-500 text-white"

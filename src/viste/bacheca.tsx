@@ -238,7 +238,7 @@ export function VistaBacheca({
 
   return (
     <DndContext sensors={sensori} collisionDetection={collisione} onDragStart={inizio} onDragOver={sopra} onDragEnd={fine} onDragCancel={() => (setAttivo(null), setLocali(null), (corrente.current = null))}>
-      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-4 sm:mx-0 sm:snap-none sm:px-0">
+      <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-4 sm:mx-0 sm:snap-none sm:scroll-px-0 sm:px-0">
         {viste.map((c) => (
           <ColonnaBacheca key={c.id} colonna={c} onApri={onApri} tutte={tutte} />
         ))}

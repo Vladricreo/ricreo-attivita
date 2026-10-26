@@ -38,7 +38,7 @@ export function Avvisi() {
   }, [])
   if (!voci.length) return null
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[70] flex flex-col items-center gap-2 px-4">
+    <div className="pointer-events-none fixed inset-x-0 top-[max(0.75rem,env(safe-area-inset-top))] z-[70] flex flex-col items-center gap-2 px-4 md:bottom-4 md:top-auto">
       {voci.map((a) => (
         <div
           key={a.id}

@@ -51,7 +51,7 @@ export function RigaNotifica({ n, onApri, onArchivia, compatta }: { n: Notifica;
       </div>
       {!n.letta_at ? <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" /> : null}
       {onArchivia ? (
-        <button type="button" onClick={onArchivia} className="relative z-10 shrink-0 self-start rounded p-1 text-muted-foreground opacity-0 hover:bg-accent group-hover:opacity-100" aria-label="Togli">
+        <button type="button" onClick={onArchivia} className="relative z-10 shrink-0 self-start rounded p-1.5 text-muted-foreground hover:bg-accent sm:p-1 sm:opacity-0 sm:group-hover:opacity-100" aria-label="Togli">
           <X className="h-3.5 w-3.5" />
         </button>
       ) : null}

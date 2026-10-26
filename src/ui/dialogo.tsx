@@ -53,7 +53,7 @@ export function Dialogo({
               )}
             </div>
             {bloccante ? null : (
-              <D.Close className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Chiudi">
+              <D.Close className="-m-1.5 rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Chiudi">
                 <X className="h-4 w-4" />
               </D.Close>
             )}
