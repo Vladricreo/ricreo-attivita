@@ -266,7 +266,7 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
         <Interruttori valore={scala} onCambia={setScala} voci={[["giorni", "Giorni"], ["settimane", "Settimane"], ["mesi", "Mesi"]]} />
         <button
           type="button"
-          className="rounded-md border border-border px-2 py-1 font-medium hover:bg-accent"
+          className="rounded-md border border-border px-2 py-2 font-medium hover:bg-accent sm:py-1"
           onClick={() => scorri.current?.scrollTo({ left: Math.max(0, x(oggi) - 120), behavior: "smooth" })}
         >
           Oggi
@@ -274,7 +274,7 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
       </div>
       <div className="flex max-h-[70vh] overflow-auto" ref={scorri}>
         {/* Colonna nomi (fissa a sinistra) */}
-        <div className="sticky left-0 z-20 w-40 shrink-0 border-r border-border bg-card sm:w-72">
+        <div className="sticky left-0 z-20 w-28 shrink-0 border-r border-border bg-card sm:w-72">
           <div className="sticky top-0 z-10 h-12 border-b border-border bg-muted/40" />
           {righe.map((r) =>
             r.tipo === "gruppo" ? (
@@ -419,7 +419,7 @@ function Interruttori<T extends string>({ valore, onCambia, voci }: { valore: T;
   return (
     <div className="flex rounded-md border border-border p-0.5">
       {voci.map(([v, l]) => (
-        <button key={v} type="button" onClick={() => onCambia(v)} className={cn("rounded px-2 py-0.5 font-medium", valore === v ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}>
+        <button key={v} type="button" onClick={() => onCambia(v)} className={cn("rounded px-2 py-1.5 font-medium sm:py-0.5", valore === v ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground")}>
           {l}
         </button>
       ))}

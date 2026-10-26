@@ -55,7 +55,7 @@ export function VistaInbox({ onApri }: { onApri: (id: string) => void }) {
               ["assegnate", "Per me"],
             ] as [Filtro, string][]
           ).map(([k, l]) => (
-            <button key={k} type="button" onClick={() => setFiltro(k)} className={cn("rounded px-2.5 py-1 text-xs font-medium", filtro === k ? "bg-accent" : "text-muted-foreground hover:text-foreground")}>
+            <button key={k} type="button" onClick={() => setFiltro(k)} className={cn("rounded px-2.5 py-1.5 text-xs font-medium sm:py-1", filtro === k ? "bg-accent" : "text-muted-foreground hover:text-foreground")}>
               {l}
             </button>
           ))}

@@ -233,7 +233,7 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
         ) : null}
       </div>
 
-      <div className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
         <Riga etichetta="Stato" icona={StatoIcona ? <StatoIcona className={colore(st?.colore).testo} /> : null}>
           <SelettoreStato
             valore={t.stato_id}

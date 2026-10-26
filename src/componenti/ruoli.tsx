@@ -94,7 +94,7 @@ export function SezioneRuoli() {
         </p>
       </div>
 
-      <div className="grid gap-2 border-b border-border px-4 py-3 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 border-b border-border px-4 py-3 sm:grid-cols-3">
         {RUOLI.map((r) => (
           <div key={r.id} className="flex gap-2 rounded-md bg-muted/50 p-2">
             <span className={cn("mt-0.5 shrink-0", r.id === "admin" ? "text-primary" : "text-muted-foreground")}>{r.icona}</span>
@@ -119,7 +119,7 @@ export function SezioneRuoli() {
           const suoi = seguiti(p.auth_id)
           const resp = responsabili(p.auth_id)
           return (
-            <div key={p.auth_id} className="grid gap-2 px-4 py-3 md:grid-cols-[minmax(0,1.3fr)_auto_minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-3">
+            <div key={p.auth_id} className="grid grid-cols-1 gap-2 px-4 py-3 md:grid-cols-[minmax(0,1.3fr)_auto_minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-3">
               <span className="flex min-w-0 items-center gap-2">
                 <AvatarPersona id={p.auth_id} misura="md" conNome />
                 {p.auth_id === me ? <span className="shrink-0 text-xs text-muted-foreground">(tu)</span> : null}

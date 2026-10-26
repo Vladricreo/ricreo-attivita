@@ -100,7 +100,7 @@ function VoceRiga({ v, onSpunta, onTesto, onElimina }: { v: VoceChecklist; onSpu
       <button
         type="button"
         onClick={onSpunta}
-        className={cn("relative flex h-4 w-4 shrink-0 items-center justify-center rounded border after:absolute after:-inset-2.5 after:content-['']", v.fatta_at ? "border-emerald-500 bg-emerald-500 text-white" : "border-muted-foreground/40 hover:border-primary")}
+        className={cn("relative flex h-4 w-4 shrink-0 items-center justify-center rounded border after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-['']", v.fatta_at ? "border-emerald-500 bg-emerald-500 text-white" : "border-muted-foreground/40 hover:border-primary")}
         aria-label={v.fatta_at ? "Segna da fare" : "Segna fatta"}
       >
         {v.fatta_at ? <Check className="h-3 w-3" /> : null}

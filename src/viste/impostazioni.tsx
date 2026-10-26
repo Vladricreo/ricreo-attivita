@@ -110,7 +110,7 @@ function SceltaColore({ valore, onCambia, disabilitato }: { valore: Colore | nul
     <Popover
       className="w-auto p-2"
       trigger={
-        <button type="button" className={cn("h-4 w-4 rounded-full ring-2 ring-background ring-offset-1 ring-offset-border", colore(valore).punto)} aria-label="Colore" />
+        <button type="button" className={cn("relative h-4 w-4 rounded-full ring-2 ring-background ring-offset-1 ring-offset-border after:absolute after:-inset-2.5 after:content-['']", colore(valore).punto)} aria-label="Colore" />
       }
     >
       <div className="grid grid-cols-7 gap-1.5">

@@ -132,7 +132,7 @@ export function VistaDashboard({ filtri, onApri }: { filtri: Filtri; onApri: (t:
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-5">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
         <section className="rounded-lg border border-border bg-card p-4 xl:col-span-3">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="text-sm font-semibold">Completate per settimana</h3>
@@ -238,7 +238,7 @@ export function VistaDashboard({ filtri, onApri }: { filtri: Filtri; onApri: (t:
         </section>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ElencoBreve titolo="Scadute da più tempo" vuoto="Nessuna attività scaduta." tasks={vecchieScadute} onApri={onApri} />
         <ElencoBreve titolo="Bloccate o da rivedere" vuoto="Niente di fermo." tasks={ferme} onApri={onApri} mostraStato />
       </div>

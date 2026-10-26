@@ -68,7 +68,7 @@ export function VistaArchivio({ onApri, testo }: { onApri: (t: Task) => void; te
               key={k}
               type="button"
               onClick={() => setSezione(k)}
-              className={cn("inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-medium", sezione === k ? "bg-accent" : "text-muted-foreground hover:text-foreground")}
+              className={cn("inline-flex items-center gap-1.5 rounded px-2.5 py-1.5 text-xs font-medium sm:py-1", sezione === k ? "bg-accent" : "text-muted-foreground hover:text-foreground")}
             >
               <Icona className="h-3.5 w-3.5" /> {l}
             </button>

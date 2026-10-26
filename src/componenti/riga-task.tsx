@@ -98,7 +98,7 @@ export function RigaTask({
           {haSotto ? (
             <button
               type="button"
-              className="rounded p-0.5 text-muted-foreground hover:bg-accent"
+              className="relative rounded p-0.5 text-muted-foreground hover:bg-accent after:absolute after:-inset-y-2.5 after:inset-x-0 after:content-['']"
               onClick={(e) => {
                 e.stopPropagation()
                 setAperta((v) => !v)
@@ -115,7 +115,7 @@ export function RigaTask({
         <div className="min-w-0 flex-1">
           {breadcrumb ? <div className="truncate text-[11px] leading-tight text-muted-foreground">{breadcrumb} ›</div> : null}
           <div className="flex min-w-0 items-center gap-1.5">
-            <span className={cn("truncate font-medium", fattaOra && "text-muted-foreground line-through")}>{t.titolo}</span>
+            <span className={cn("line-clamp-2 break-words font-medium sm:truncate", fattaOra && "text-muted-foreground line-through")}>{t.titolo}</span>
             {t.personale ? <Personale /> : null}
             <LogoServizio servizio={t.servizio} />
             {ric ? (
