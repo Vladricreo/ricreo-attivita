@@ -97,6 +97,9 @@ export function NuovaAttivita({
     else onChiudi()
   }
 
+  // Personale: resta solo chi la crea tra gli assegnatari (nessun altro la vedrebbe).
+  const cambiaPersonale = (v: boolean) => cambia({ personale: v, ...(v ? { assegnatari: me ? [me] : [] } : {}) })
+
   const aggiungiSotto = () => {
     const titolo = sotto.trim()
     if (!titolo) return
@@ -108,8 +111,19 @@ export function NuovaAttivita({
     <Dialogo
       aperto={aperta}
       onChiudi={onChiudi}
-      titolo="Nuova attività"
-      className="max-w-2xl"
+      titolo={
+        d.personale ? (
+          <span className="inline-flex items-center gap-1.5 text-violet-700 dark:text-violet-300">
+            <Lock className="h-4 w-4" /> Nuova attività personale
+          </span>
+        ) : (
+          "Nuova attività"
+        )
+      }
+      className={cn(
+        "max-w-2xl transition-[background-color,border-color,box-shadow] duration-200",
+        d.personale && "border-violet-400 bg-violet-50 ring-4 ring-violet-500/25 dark:border-violet-500/70 dark:bg-[hsl(263,35%,9%)]",
+      )}
       piede={
         <>
           <label className="mr-auto flex items-center gap-2 text-xs text-muted-foreground">
@@ -118,13 +132,15 @@ export function NuovaAttivita({
           <Bottone variante="contorno" onClick={onChiudi}>
             Annulla
           </Bottone>
-          <Bottone onClick={() => void crea()} disabled={!d.titolo.trim() || invio}>
-            {invio ? "Salvo…" : "Crea attività"}
+          <Bottone onClick={() => void crea()} disabled={!d.titolo.trim() || invio} className={cn(d.personale && "bg-violet-600 text-white hover:bg-violet-700")}>
+            {d.personale ? <Lock /> : null}
+            {invio ? "Salvo…" : d.personale ? "Crea personale" : "Crea attività"}
           </Bottone>
         </>
       }
     >
       <div className="space-y-4">
+        <SceltaVisibilita personale={!!d.personale} onCambia={cambiaPersonale} />
         <Campo
           autoFocus
           value={d.titolo}
@@ -217,14 +233,7 @@ export function NuovaAttivita({
               </Chip>
             }
           />
-          <Chip
-            className={cn("border-border", d.personale && "border-primary bg-primary/5")}
-            onClick={() => cambia({ personale: !d.personale, ...(d.personale ? {} : { assegnatari: (d.assegnatari ?? []).filter((a) => a === me) }) })}
-          >
-            <Lock /> {d.personale ? "Personale" : "Personale?"}
-          </Chip>
         </div>
-        {d.personale ? <p className="-mt-2 text-xs text-muted-foreground">La vedrai solo tu, nemmeno gli admin.</p> : null}
 
         <div>
           <div className="mb-1.5 flex items-center gap-2 text-sm font-medium">
@@ -279,5 +288,41 @@ export function NuovaAttivita({
         </div>
       </div>
     </Dialogo>
+  )
+}
+
+/** Chi vede l'attività: due scelte grandi, comode anche col dito. "Solo io" colora di viola tutta la finestra. */
+function SceltaVisibilita({ personale, onCambia }: { personale: boolean; onCambia: (v: boolean) => void }) {
+  const scelte = [
+    { valore: false, Icona: Users, titolo: "Team", sotto: "Chi è coinvolto" },
+    { valore: true, Icona: Lock, titolo: "Solo io", sotto: "Nemmeno gli admin" },
+  ]
+  return (
+    <div role="radiogroup" aria-label="Chi la vede" className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/50 p-1 sm:max-w-md">
+      {scelte.map(({ valore, Icona, titolo, sotto }) => {
+        const scelta = personale === valore
+        return (
+          <button
+            key={titolo}
+            type="button"
+            role="radio"
+            aria-checked={scelta}
+            onClick={() => onCambia(valore)}
+            className={cn(
+              "flex min-h-12 min-w-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              scelta && !valore && "bg-background text-foreground shadow-sm",
+              scelta && valore && "bg-violet-600 text-white shadow-sm",
+              !scelta && "text-muted-foreground hover:bg-background/70 hover:text-foreground",
+            )}
+          >
+            <Icona className="h-4 w-4 shrink-0" />
+            <span className="min-w-0">
+              <span className="block text-sm font-medium leading-tight">{titolo}</span>
+              <span className={cn("block truncate text-[11px] leading-tight", scelta && valore ? "text-white/80" : "text-muted-foreground")}>{sotto}</span>
+            </span>
+          </button>
+        )
+      })}
+    </div>
   )
 }
