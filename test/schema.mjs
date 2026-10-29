@@ -190,6 +190,45 @@ ok(gAtt.length === 2 && gAtt[0].titolo === "Fiera › Stand" && gAtt[1].task_id 
   `attività di dario per Google (${JSON.stringify(gAtt.map((r) => [r.titolo, r.app_slug, r.url_app]))})`)
 await come("anna", () => q(`update tasks.task set eliminata_at = now() where id = $1`, [gT]))
 ok((await comeServer(`select * from tasks.google_attivita($1)`, [U.dario])).length === 0, "cestino → fuori da Google (anche le sottotask)")
+
+console.log("Google nei due sensi")
+ok(!!(await come("dario", () => errore(() => q(`select tasks.google_applica($1, $2, '{}')`, [U.dario, gT])))), "google_applica solo per il server")
+ok(!!(await come("dario", () => errore(() => q(`select tasks.google_crea($1, 'x')`, [U.dario])))), "google_crea solo per il server")
+const g2 = await come("anna", async () => (await q(`select tasks.crea_task($1) id`, [{
+  titolo: "Ordine", scadenza: "2030-06-10", data_inizio: "2030-06-01", assegnatari: [U.dario], sottotask: [{ titolo: "Imballo", assegnatari: [U.dario], scadenza: "2030-06-09" }],
+}]))[0].id)
+const g2s = (await q(`select id from tasks.task where padre_id = $1`, [g2]))[0].id
+const applica = async (task, cambi, chi = U.dario) => (await comeServer(`select tasks.google_applica($1, $2, $3) r`, [chi, task, cambi]))[0].r
+ok(Object.keys(await applica(g2, { fatta: true }, U.elena)).length === 0, "chi non è assegnato non cambia nulla da Google")
+const fatta = await applica(g2, { fatta: true })
+const dopoFatta = (await q(`select completata_at, completata_da from tasks.task where id = $1`, [g2]))[0]
+ok(fatta.fatta === true && dopoFatta.completata_at !== null && dopoFatta.completata_da === U.dario, "spuntata su Google → completata da dario")
+ok((await q(`select count(*)::int n from tasks.notifiche where task_id = $1 and tipo = 'completata' and user_id = $2`, [g2, U.anna]))[0].n === 1, "anna sa che è fatta")
+await applica(g2, { fatta: false })
+ok((await q(`select completata_at from tasks.task where id = $1`, [g2]))[0].completata_at === null, "tolta la spunta → riaperta")
+const spostata = await applica(g2, { scadenza: "2030-05-20", ora: "09:30", titolo: "Ordine grande" })
+const g2r = (await q(`select titolo, scadenza::text, ora_scadenza::text, data_inizio::text from tasks.task where id = $1`, [g2]))[0]
+ok(g2r.titolo === "Ordine grande" && g2r.scadenza === "2030-05-20" && g2r.ora_scadenza === "09:30:00" && g2r.data_inizio === "2030-05-20" && spostata.ora === "09:30",
+  `spostata e rinominata da Google (${JSON.stringify(g2r)})`)
+await applica(g2s, { titolo: "Ordine grande › Imballo e spedizione" })
+ok((await q(`select titolo from tasks.task where id = $1`, [g2s]))[0].titolo === "Imballo e spedizione", "sottotask: tolto il nome della principale")
+ok((await applica(g2, { elimina: true })).elimina === undefined && (await q(`select eliminata_at from tasks.task where id = $1`, [g2]))[0].eliminata_at === null,
+  "eliminata su Google ma di anna → resta")
+const gRic = await come("anna", async () => (await q(`select tasks.crea_task($1) id`, [{ titolo: "Backup", scadenza: "2030-01-31", ricorrenza_unita: "month", ricorrenza_intervallo: 1, assegnatari: [U.dario] }]))[0].id)
+await applica(gRic, { fatta: true })
+const ricR = (await q(`select scadenza::text, completata_at from tasks.task where id = $1`, [gRic]))[0]
+ok(ricR.completata_at === null && ricR.scadenza > "2030-01-31", `ricorrente spuntata su Google → prossima scadenza (${ricR.scadenza})`)
+await applica(gRic, { scadenza: null })
+ok((await q(`select scadenza from tasks.task where id = $1`, [gRic]))[0].scadenza !== null, "ricorrente non resta senza scadenza")
+const nuova = (await comeServer(`select tasks.google_crea($1, ' Chiamare il fornitore ') id`, [U.dario]))[0].id
+const nuovaR = (await q(`select titolo, personale, creato_da, app_origine, (select array_agg(user_id) from tasks.assegnatari where task_id = t.id) chi from tasks.task t where id = $1`, [nuova]))[0]
+ok(nuovaR.titolo === "Chiamare il fornitore" && nuovaR.personale && nuovaR.creato_da === U.dario && nuovaR.chi.length === 1 && nuovaR.chi[0] === U.dario, "aggiunta dal telefono → personale di dario")
+ok((await come("anna", () => q(`select id from tasks.v_task where id = $1`, [nuova]))).length === 0, "nemmeno l'admin la vede")
+ok(!(await comeServer(`select task_id from tasks.google_attivita($1)`, [U.dario])).some((r) => r.task_id === nuova), "senza data e senza task Google: non va su Google")
+await q(`insert into tasks.google_sync (utente_id, task_id, google_task_id) values ($1, $2, 'g1')`, [U.dario, nuova])
+ok((await comeServer(`select task_id from tasks.google_attivita($1)`, [U.dario])).some((r) => r.task_id === nuova), "legata a Google Tasks: resta nella lista anche senza data")
+ok((await applica(nuova, { elimina: true })).elimina === true && (await q(`select eliminata_da from tasks.task where id = $1`, [nuova]))[0].eliminata_da === U.dario,
+  "personale sua eliminata su Google → cestino")
 await come("dario", () => q(`select tasks.google_scollega()`))
 ok((await q(`select scollegato_at from tasks.google_account where utente_id = $1`, [U.dario]))[0].scollegato_at !== null, "scollega → da ripulire")
 ok((await come("dario", () => q(`select tasks.google_stato() s`)))[0].s.collegato === false, "dopo scollega non risulta collegato")

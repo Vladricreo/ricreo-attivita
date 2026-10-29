@@ -22,7 +22,10 @@ preventivatore): una task assegnata da Inventory a una persona la vede anche in 
   popup in quell'app che resta finché non lo conferma (`PopupSolleciti`, montato dal provider: nessun lavoro
   nelle app). Chi lo manda vede se è stato visto.
 - **Google Tasks e Calendar** (facoltativo, per persona, da Impostazioni): le attività assegnate con scadenza
-  vanno nella lista "Ricreo" e/o nel calendario "Ricreo attività" del proprio Google, solo app → Google.
+  vanno nella lista "Ricreo" e/o nel calendario "Ricreo attività" del proprio Google. Nei due sensi: spunta,
+  data/ora e titolo cambiati su Google tornano nell'attività (`tasks.google_applica`), task/eventi aggiunti lì
+  diventano attività personali (`tasks.google_crea`), eliminare su Google manda nel cestino solo le personali
+  proprie (le altre si ricreano).
   Consenso OAuth e sync li fa Finance (`/api/attivita/google/*`, cron `/api/cron/attivita-google`); le altre
   app aprono il link di Finance con un codice monouso (`tasks.google_avvia`), nessun lavoro nelle app.
 - **Cestino**: eliminare sposta nel cestino; dopo un anno un job cancella righe e file.

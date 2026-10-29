@@ -95,7 +95,8 @@ export function SezioneGoogle() {
         <h3 className="text-sm font-semibold">Google Tasks e Calendar</h3>
         <p className="text-xs text-muted-foreground">
           Facoltativo e personale: le attività assegnate a te con una scadenza compaiono nel tuo Google Tasks (lista &quot;Ricreo&quot;) e/o nel
-          tuo Google Calendar (calendario &quot;Ricreo attività&quot;). Si aggiornano da sole ogni pochi minuti; si completano qui nell&apos;app.
+          tuo Google Calendar (calendario &quot;Ricreo attività&quot;). Vale nei due sensi, ogni pochi minuti: se la completi, la sposti o la
+          rinomini su Google cambia anche qui, e quello che aggiungi in quella lista o in quel calendario diventa una tua attività personale.
         </p>
       </div>
 
