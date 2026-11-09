@@ -34,6 +34,8 @@ export function messaggioErrore(e: Errore | unknown, fallback = "Operazione non 
   const err = e as NonNullable<Errore>
   if (err.code === "42501") return err.message && !/permission denied|row-level security/i.test(err.message) ? err.message : "Non hai i permessi per questa operazione."
   if (err.code === "23503") return "Un elemento collegato non esiste più: ricarica la pagina."
+  if (err.code === "23514" && /link_check|url_check/.test(err.message ?? ""))
+    return "Il collegamento deve essere una pagina dell'app (/…) o un indirizzo https://"
   if (err.code === "PGRST106" || /schema must be one of/i.test(err.message ?? ""))
     return "Lo schema tasks non è esposto dalle API di Supabase (Settings → API → Exposed schemas)."
   if (/Failed to fetch|NetworkError|Load failed/i.test(err.message ?? "")) return "Connessione assente: riprova tra poco."

@@ -40,6 +40,7 @@ import {
   eManager,
   fatta,
   inAttesaDi,
+  linkSicuro,
   normalizza,
   PRIORITA,
   quandoRelativo,
@@ -596,8 +597,8 @@ function CampoLink({ t }: { t: Task }) {
 
   const salva = () => {
     const v = link.trim()
-    if (v && !v.startsWith("/") && !/^https:\/\//.test(v)) {
-      avviso.errore("Il collegamento deve iniziare con / (pagina dell'app) o https://")
+    if (v && !linkSicuro(v)) {
+      avviso.errore("Il collegamento deve essere una pagina dell'app (/…) o un indirizzo https://")
       return
     }
     void azioni.aggiorna(t.id, { link: v || null })
@@ -665,8 +666,9 @@ function CampoLink({ t }: { t: Task }) {
   )
 }
 
-/** Link relativo: se la categoria è di un'altra app, si apre in quell'app. */
-export function hrefLink(link: string | null, appCategoria: string, appCorrente: string, app: { slug: string; url: string | null }[]): string | null {
+/** Link relativo: se la categoria è di un'altra app, si apre in quell'app. Quelli non sicuri non si aprono. */
+export function hrefLink(grezzo: string | null, appCategoria: string, appCorrente: string, app: { slug: string; url: string | null }[]): string | null {
+  const link = linkSicuro(grezzo)
   if (!link) return null
   if (!link.startsWith("/")) return link
   if (appCategoria === appCorrente) return link
@@ -685,7 +687,10 @@ function Collegamenti({ t }: { t: Task }) {
           const proprio = c.app_slug === config.app ? config.estensioni?.collegamento?.(c) : null
           const app = base?.app.find((a) => a.slug === c.app_slug)
           const etichetta = proprio?.etichetta ?? `${app?.nome ?? c.app_slug}: ${c.etichetta ?? c.tipo}`
-          const href = proprio?.href ?? (c.url ? (c.app_slug === config.app || !c.url.startsWith("/") ? c.url : `${app?.url?.replace(/\/$/, "") ?? ""}${c.url}`) : undefined)
+          // Anche l'href proposto dall'app passa dal controllo: spesso è c.url così com'è.
+          const daApp = proprio?.href != null
+          const url = linkSicuro(daApp ? proprio?.href : c.url)
+          const href = url ? (daApp || c.app_slug === config.app || !url.startsWith("/") ? url : `${app?.url?.replace(/\/$/, "") ?? ""}${url}`) : undefined
           return (
             <span key={c.id} className="group inline-flex max-w-full items-center gap-1 rounded-md border border-border bg-muted/30 px-2 py-1 text-xs">
               {href ? (

@@ -327,3 +327,14 @@ export function servizioDaTesto(testo: string): string | null {
   for (const [k, s] of Object.entries(SERVIZI)) if (s.parole.some((p) => t.includes(p))) return k
   return null
 }
+
+/**
+ * Link che si può aprire: pagina dell'app ("/...", non "//altro-sito" né "/\\altro-sito") o indirizzo
+ * https, senza caratteri di controllo (il browser li toglie: "/<tab>/sito" diventerebbe "//sito").
+ * Stessa regola dei vincoli task_link_check e collegamenti_url_check nel database.
+ */
+export function linkSicuro(link: string | null | undefined): string | null {
+  if (!link || /[\u0000-\u001f\u007f]/.test(link)) return null
+  if (link.startsWith("https://")) return link
+  return /^\/(?![/\\])/.test(link) ? link : null
+}

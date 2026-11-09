@@ -59,11 +59,14 @@ export function Chat({ t }: { t: Task }) {
     leggi()
   }, [carica, leggi])
 
-  // Tempo reale: nuovi messaggi, modifiche, reazioni, allegati; presenza per "sta scrivendo".
+  // Tempo reale: nuovi messaggi, modifiche, reazioni, allegati (le righe le filtra la RLS delle tabelle).
+  // "Sta scrivendo" va su un canale privato a parte: lo raggiunge solo chi vede l'attività (policy su
+  // realtime.messages); se non si collega si perde solo l'indicatore, non la chat.
   useEffect(() => {
     if (!me) return
     const sb = config.supabase
-    const ch = sb.channel(`chat:${t.id}`, { config: { presence: { key: me } } })
+    const ch = sb.channel(`chat:${t.id}`)
+    const presenza = sb.channel(`chat-presenza:${t.id}`, { config: { private: true, presence: { key: me } } })
     let attesa: ReturnType<typeof setTimeout> | null = null
     const presto = () => {
       if (attesa) clearTimeout(attesa)
@@ -75,18 +78,21 @@ export function Chat({ t }: { t: Task }) {
     ch.on("postgres_changes" as any, { event: "*", schema: "tasks", table: "commenti", filter: `task_id=eq.${t.id}` }, presto)
       .on("postgres_changes" as any, { event: "*", schema: "tasks", table: "allegati", filter: `task_id=eq.${t.id}` }, presto)
       .on("postgres_changes" as any, { event: "*", schema: "tasks", table: "reazioni" }, presto)
+      .subscribe()
+    presenza
       .on("presence", { event: "sync" }, () => {
-        const stato = ch.presenceState<{ scrive?: boolean }>()
+        const stato = presenza.presenceState<{ scrive?: boolean }>()
         setScrivono(Object.entries(stato).filter(([k, v]) => k !== me && v.some((x) => x.scrive)).map(([k]) => k))
       })
       .subscribe((s) => {
-        if (s === "SUBSCRIBED") void ch.track({ scrive: false })
+        if (s === "SUBSCRIBED") void presenza.track({ scrive: false })
       })
-    canale.current = ch
+    canale.current = presenza
     return () => {
       if (attesa) clearTimeout(attesa)
       canale.current = null
       sb.removeChannel(ch)
+      sb.removeChannel(presenza)
     }
   }, [t.id, me, config.supabase, carica, leggi])
 

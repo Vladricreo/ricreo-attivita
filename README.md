@@ -37,6 +37,9 @@ preventivatore): una task assegnata da Inventory a una persona la vede anche in 
 - Ruolo **Admin** (`app_auth.has_role('Admin')`): tutte le altre. Ruolo **Manager**: quelle delle persone che
   segue (`tasks.manager_persone`, la decidono gli admin in Impostazioni).
 - Chi vede modifica, commenta e completa; il cestino solo creatore, admin e manager.
+- Tutto vale solo per persone **attive** in `public."User"`: un account Supabase Auth senza riga lì (es. registrato
+  da solo) o disattivato non vede né scrive niente (`tasks_private.e_attivo()`).
+- Link e url dei collegamenti: solo pagine dell'app (`/…`) o `https://` (vincoli nel database, `linkSicuro()` nel codice).
 
 ## Database
 

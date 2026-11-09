@@ -253,6 +253,62 @@ ok((await ruoliDi("bruno")).includes("Admin"), "e glielo ridà")
 console.log("Vista app")
 const app = await come("dario", () => q(`select slug from tasks.v_app order by ordine`))
 ok(app.length === 4, `v_app (${app.map((a) => a.slug).join(",")})`)
+console.log("Sicurezza: solo persone attive")
+// fabio ha un account Auth ma nessuna riga in public."User" (es. si è registrato da solo).
+U.fabio = "00000000-0000-0000-0000-00000000000f"
+await q(`insert into auth.users values ($1)`, [U.fabio])
+ok((await come("fabio", () => q(`select * from tasks.v_persone`))).length === 0, "registrato da solo: non vede le persone")
+ok((await come("fabio", () => q(`select * from tasks.v_app`))).length === 0, "… né le app")
+ok((await come("fabio", () => q(`select * from tasks.categorie`))).length === 0, "… né le categorie")
+ok(!!(await come("fabio", () => errore(() => q(`select tasks.crea_task($1)`, [{ titolo: "Spam", assegnatari: [U.dario] }])))), "… non crea attività")
+ok(!!(await come("fabio", () => errore(() => q(`insert into storage.objects (bucket_id, name, owner_id) values ('tasks', $1, $2)`, [`${t1}/x.jpg`, U.fabio])))), "… non carica file")
+ok(!!(await come("fabio", () => errore(() => q(`select tasks.google_avvia(null, true, false)`)))), "… non collega Google")
+const visteDario = (await come("dario", () => q(`select id from tasks.v_task`))).length
+const googleDario = (await comeServer(`select task_id from tasks.google_attivita($1)`, [U.dario])).length
+await q(`update public."User" set "isActive" = false where "authUserId" = $1`, [U.dario])
+ok(visteDario > 0 && (await come("dario", () => q(`select id from tasks.v_task`))).length === 0, `disattivato: non vede più le sue attività (prima ${visteDario})`)
+ok((await come("dario", () => q(`select id from tasks.notifiche`))).length === 0, "… né le notifiche")
+ok((await come("dario", () => q(`select * from tasks.v_persone`))).length === 0, "… né le persone")
+ok((await come("dario", () => q(`update tasks.task set titolo = 'x' where id = $1 returning id`, [t1]))).length === 0, "… e non modifica")
+ok(googleDario > 0 && (await comeServer(`select task_id from tasks.google_attivita($1)`, [U.dario])).length === 0, `… niente sync verso Google (prima ${googleDario})`)
+ok(Object.keys(await applica(gRic, { titolo: "Cambiato da Google" })).length === 0, "… né cambi da Google")
+await q(`update public."User" set "isActive" = true where "authUserId" = $1`, [U.dario])
+ok((await come("dario", () => q(`select id from tasks.v_task`))).length === visteDario, "riattivato: rivede tutto")
+
+console.log("Sicurezza: link")
+const link = (v) => come("bruno", () => errore(() => q(`update tasks.task set link = $1 where id = $2`, [v, t1])))
+ok((await link("javascript:alert(1)")) !== null, "link javascript: rifiutato")
+ok((await link("//altro-sito.example")) !== null, "link //altro-sito rifiutato")
+ok((await link("/\\altro-sito.example")) !== null, "link /\\altro-sito rifiutato")
+ok((await link("/\t/altro-sito.example")) !== null, "link con tabulazione rifiutato")
+ok((await link("http://altro-sito.example")) !== null, "link http rifiutato")
+ok((await link("/pagina?x=1")) === null && (await link("https://example.test/a")) === null && (await link(null)) === null, "pagina dell'app, https e vuoto accettati")
+ok(!!(await come("bruno", () => errore(() => q(`insert into tasks.collegamenti (task_id, app_slug, tipo, url) values ($1, 'finance', 'nota', 'javascript:alert(1)')`, [t1])))), "url del collegamento javascript: rifiutato")
+ok(!!(await come("bruno", () => errore(() => q(`select tasks.crea_task($1)`, [{ titolo: "Link", link: "//altro-sito.example" }])))), "crea_task con link //altro-sito rifiutato")
+
+console.log("Sicurezza: eliminati")
+const segreto = (await come("dario", () => q(`insert into tasks.commenti (task_id, testo, menzioni) values ($1, 'codice del portone 1234', $2) returning id`, [t1, [U.bruno]])))[0].id
+ok((await come("bruno", () => q(`select testo from tasks.notifiche where commento_id = $1`, [segreto])))[0]?.testo === "codice del portone 1234", "bruno menzionato: estratto nella notifica")
+await come("dario", () => q(`update tasks.commenti set eliminato_at = now() where id = $1`, [segreto]))
+const cEl = (await come("bruno", () => q(`select testo, menzioni, eliminato_at from tasks.commenti where id = $1`, [segreto])))[0]
+ok(cEl.testo === "" && cEl.menzioni.length === 0 && !!cEl.eliminato_at, "messaggio eliminato: testo sparito anche dal database")
+const nEl = await come("bruno", () => q(`select testo from tasks.notifiche where commento_id = $1`, [segreto]))
+ok(nEl.length > 0 && nEl.every((n) => n.testo === "Messaggio eliminato"), `… e dalle notifiche (${JSON.stringify(nEl)})`)
+await come("dario", () => q(`update tasks.commenti set testo = 'di nuovo', eliminato_at = null where id = $1`, [segreto]))
+const cEl2 = (await come("dario", () => q(`select testo, eliminato_at from tasks.commenti where id = $1`, [segreto])))[0]
+ok(cEl2.testo === "" && !!cEl2.eliminato_at, "… e non torna indietro")
+const fileT1 = `${t1}/a.jpg`
+ok((await come("bruno", () => q(`select name from storage.objects where name = $1`, [fileT1]))).length === 1, "file leggibile finché l'allegato c'è")
+await come("dario", () => q(`update tasks.allegati set eliminato_at = now() where id = $1`, [all[0].id]))
+ok((await come("bruno", () => q(`select name from storage.objects where name = $1`, [fileT1]))).length === 0, "allegato eliminato: il file non si scarica più")
+
+console.log("Sicurezza: presenza della chat")
+const chatVis = async (chi, topic) => (await come(chi, () => q(`select tasks_private.chat_visibile($1) v`, [topic])))[0].v
+ok((await chatVis("dario", `chat-presenza:${t1}`)) === true, "dario raggiunge la presenza della sua attività")
+ok((await chatVis("elena", `chat-presenza:${pers}`)) === false, "elena no su una personale di dario")
+ok((await chatVis("fabio", `chat-presenza:${t1}`)) === false, "registrato da solo no")
+ok((await chatVis("dario", `chat:${t1}`)) === false && (await chatVis("dario", "chat-presenza:non-un-id")) === false, "altri topic e id non validi: no (senza errori)")
+
 const ces = await q(`select * from tasks.da_eliminare_definitivamente(0)`)
 ok(ces.length >= 0, `cestino da svuotare: ${ces.length}`)
 console.log(errori ? `\n${errori} controlli falliti` : "\nTutto ok")
