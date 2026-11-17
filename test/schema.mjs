@@ -95,6 +95,11 @@ const fin = await come("anna", () => q(`select tipo from tasks.notifiche where t
 ok(fin.length === 1, "anna: sottotask tutte finite")
 const prog = await come("anna", () => q(`select n_sottotask, n_sottotask_fatte from tasks.v_task where id = $1`, [seq]))
 ok(prog[0].n_sottotask === 3 && prog[0].n_sottotask_fatte === 3, "progresso 3/3")
+// "Già completata" non deve uscire con un codice della classe 40: PostgREST rieseguirebbe la richiesta senza fine.
+const giaFatta = await come("bruno", async () => { try { await db.query(`select tasks.completa($1)`, [subs[0].id]); return null } catch (e) { return e } })
+ok(giaFatta?.code === "P0001" && /già completata/.test(giaFatta.message), `completare due volte → errore P0001 (${giaFatta?.code})`)
+const classe40 = await q(`select n.nspname || '.' || p.proname f from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname in ('tasks', 'tasks_private') and p.prosrc ~ 'errcode\\s*=\\s*''40'`)
+ok(classe40.length === 0, `nessuna funzione usa codici d'errore 40xxx (${classe40.map((r) => r.f).join(", ")})`)
 
 console.log("Ricorrenti")
 const ric = await come("anna", async () => (await q(`select tasks.crea_task($1) id`, [{ titolo: "Chiusura mese", categoria_id: "finance", scadenza: "2026-01-31", ricorrenza_unita: "month", ricorrenza_intervallo: 1, checklist: ["Banca", "Fatture"], sottotask: [{ titolo: "Estratto conto" }] }]))[0].id)
