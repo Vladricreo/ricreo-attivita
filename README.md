@@ -28,6 +28,11 @@ preventivatore): una task assegnata da Inventory a una persona la vede anche in 
   proprie (le altre si ricreano).
   Consenso OAuth e sync li fa Finance (`/api/attivita/google/*`, cron `/api/cron/attivita-google`); le altre
   app aprono il link di Finance con un codice monouso (`tasks.google_avvia`), nessun lavoro nelle app.
+- **In attesa**: quando non dipende da chi la deve fare, un'attività aspetta qualcosa o qualcuno (motivo) con il
+  giorno in cui ricontrollarla; esce dalle cose da fare fino a quel giorno. Il promemoria lo manda
+  `tasks.avvisa_ricontrolli()`, chiamata da un job con la secret key (oggi il giro del Planner).
+- **Chiudi senza farla**: archiviare dice perché (non serve più / è cambiata la situazione), cosa è successo e,
+  se c'è, quale attività la sostituisce. Le attività aperte che nessuno tocca da 14 giorni risultano **ferme**.
 - **Cestino**: eliminare sposta nel cestino; dopo un anno un job cancella righe e file.
 
 ## Chi vede cosa (RLS)

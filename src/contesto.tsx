@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { creaApi, messaggioErrore, type Api, type Base } from "./dati/api"
 import { aggiungiGiorniIso, oggiIso, statoDiTipo } from "./regole"
-import type { BozzaTask, Categoria, ConfigAttivita, ModificaTask, Notifica, Persona, Preferenze, Sottocategoria, Stato, Task } from "./tipi"
+import type { BozzaTask, Categoria, ConfigAttivita, Esito, ModificaTask, Notifica, Persona, Preferenze, Sottocategoria, Stato, Task } from "./tipi"
 import { PopupSolleciti } from "./componenti/solleciti"
 import { Avvisi, avviso } from "./ui/avvisi"
 import { ProviderSuggerimenti } from "./ui/suggerimento"
@@ -30,6 +30,14 @@ export type Azioni = {
   recupera: (t: Task) => Promise<void>
   archivia: (t: Task, motivo?: string | null) => Promise<void>
   disarchivia: (t: Task) => Promise<void>
+  /** Segna che aspetta qualcosa o qualcuno, con il giorno in cui tornare a guardarla. */
+  mettiInAttesa: (t: Task, motivo: string, ricontrolla: string | null) => Promise<boolean>
+  /** Non aspetta più: si può andare avanti. */
+  riprendi: (t: Task) => Promise<void>
+  /** Chiude senza farla, dicendo perché (e, se c'è, quale attività la sostituisce). */
+  chiudiSenzaFare: (t: Task, c: { esito: Esito; nota?: string | null; sostituitaDa?: string | null }) => Promise<boolean>
+  /** Revisione: l'ho riguardata, è ancora valida così. */
+  confermaRivista: (t: Task) => Promise<boolean>
 }
 
 type ValoreAttivita = {
@@ -322,6 +330,30 @@ export function AttivitaProvider({ config, children }: { config: ConfigAttivita;
       },
       async disarchivia(t) {
         if (await prova(() => api.aggiorna(t.id, { archiviata_at: null }))) avviso.ok(`Di nuovo tra le attività: ${t.titolo}`)
+      },
+      async mettiInAttesa(t, motivo, ricontrolla) {
+        const patch = { attesa_motivo: motivo.trim(), ricontrolla_il: ricontrolla }
+        ritocca(t.id, { ...patch, attesa_dal: t.attesa_dal ?? new Date().toISOString(), attesa_da: t.attesa_da ?? me })
+        const riuscito = await prova(() => api.aggiorna(t.id, patch))
+        if (riuscito && !t.attesa_motivo) avviso.ok(`In attesa: ${t.titolo}`, { etichetta: "Annulla", fai: () => void a.riprendi(t) })
+        return riuscito
+      },
+      async riprendi(t) {
+        ritocca(t.id, { attesa_motivo: null, attesa_dal: null, attesa_da: null, ricontrolla_il: null })
+        if (await prova(() => api.aggiorna(t.id, { attesa_motivo: null, ricontrolla_il: null }))) avviso.ok(`Si riparte: ${t.titolo}`)
+      },
+      async chiudiSenzaFare(t, c) {
+        const adesso = new Date().toISOString()
+        const patch = { archiviata_at: adesso, esito: c.esito, archivio_motivo: c.nota?.trim() || null, sostituita_da: c.sostituitaDa ?? null }
+        ritocca(t.id, { ...patch, attesa_motivo: null, ricontrolla_il: null })
+        const riuscito = await prova(() => api.aggiorna(t.id, patch))
+        if (riuscito) avviso.ok(`Chiusa senza farla: ${t.titolo}`, { etichetta: "Annulla", fai: () => void a.disarchivia(t) })
+        return riuscito
+      },
+      async confermaRivista(t) {
+        const adesso = new Date().toISOString()
+        ritocca(t.id, { rivista_at: adesso, rivista_da: me })
+        return prova(() => api.aggiorna(t.id, { rivista_at: adesso }))
       },
     }
     return a

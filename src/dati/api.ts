@@ -49,6 +49,12 @@ function ok<T>(r: { data: T; error: Errore }, fallback?: string): T {
 
 const NOME_FILE = /[^\w.\-]+/g
 
+/** Solo i campi delle preferenze che l'interfaccia conosce (la riga ha anche user_id e date). */
+function pulisciPreferenze(riga: unknown): Partial<Preferenze> | null {
+  const r = riga as Partial<Preferenze> | null
+  return r ? { vista_iniziale: r.vista_iniziale ?? null, limite_in_corso: r.limite_in_corso ?? null } : null
+}
+
 export type Base = {
   persone: Persona[]
   categorie: Categoria[]
@@ -76,7 +82,7 @@ export function creaApi(sb: SupabaseClient<any, any, any>) {
         db().from("stati").select("*").order("ordine"),
         db().from("v_app").select("*").order("ordine"),
         db().from("manager_persone").select("manager_id, persona_id"),
-        db().from("preferenze").select("vista_iniziale").maybeSingle(),
+        db().from("preferenze").select("*").maybeSingle(),
       ])
       return {
         persone: ok(persone, "Errore caricamento persone") as Persona[],
@@ -86,7 +92,7 @@ export function creaApi(sb: SupabaseClient<any, any, any>) {
         app: ok(app) as AppRicreo[],
         manager: ok(manager) as ManagerPersona[],
         // Le preferenze non bloccano la pagina (es. migration non ancora applicata): si parte da quelle vuote.
-        preferenze: { vista_iniziale: null, ...(preferenze.error ? null : (preferenze.data as Preferenze | null)) },
+        preferenze: { vista_iniziale: null, limite_in_corso: null, ...(preferenze.error ? null : pulisciPreferenze(preferenze.data)) },
       }
     },
 

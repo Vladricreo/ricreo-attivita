@@ -26,6 +26,12 @@ export function testoNotifica(n: Notifica, nome: (id: string | null) => string, 
       return { titolo: `${chi} ti ricorda “${titolo}”`, dettaglio: n.testo }
     case "sollecito_forte":
       return { titolo: `Sollecito urgente da ${chi}: “${titolo}”`, dettaglio: n.testo }
+    case "attesa":
+      return { titolo: `${chi} ha messo in attesa “${titolo}”`, dettaglio: n.testo ? `Aspetta: ${n.testo}` : null }
+    case "ricontrollo":
+      return { titolo: `È ora di ricontrollare “${titolo}”`, dettaglio: n.testo ? `Aspettavi: ${n.testo}` : null }
+    case "chiusa":
+      return { titolo: `${chi} ha chiuso senza farla “${titolo}”`, dettaglio: n.testo }
     default:
       return { titolo, dettaglio: n.testo }
   }

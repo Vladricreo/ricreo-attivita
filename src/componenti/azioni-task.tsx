@@ -10,7 +10,9 @@ import {
   Ellipsis,
   ExternalLink,
   Flag,
+  Hourglass,
   Link2,
+  Play,
   RotateCcw,
   Trash2,
 } from "lucide-react"
@@ -18,13 +20,14 @@ import { useState } from "react"
 import { colore } from "../colori"
 import { useAttivita } from "../contesto"
 import { messaggioErrore } from "../dati/api"
-import { aggiungiGiorniIso, giornoSettimana, oggiIso, ORDINE_PRIORITA, PRIORITA } from "../regole"
+import { aggiungiGiorniIso, aperta, giornoSettimana, oggiIso, ORDINE_PRIORITA, PRIORITA } from "../regole"
 import type { BozzaTask, Task } from "../tipi"
 import { avviso } from "../ui/avvisi"
 import { Bottone } from "../ui/bottone"
 import { cn } from "../ui/cn"
 import { Menu, MenuSeparatore, MenuVoce, SottoMenu } from "../ui/menu"
 import { ICONE_STATO } from "./aspetto"
+import { DialogoAttesa, DialogoChiusura } from "./attesa"
 import { DialogoSollecito, useSollecitabili } from "./solleciti"
 
 /** Copia completa: campi, persone, checklist e sottotask (aperte). */
@@ -90,7 +93,9 @@ export function MenuAzioniTask({ t, onApri, className }: { t: Task; onApri?: () 
   const seguo = !!me && t.osservatori.includes(me)
   const sollecitabili = useSollecitabili(t)
   const [sollecito, setSollecito] = useState(false)
-  const ferma = (e: { stopPropagation: () => void }) => e.stopPropagation()
+  const [attesa, setAttesa] = useState(false)
+  const [chiusura, setChiusura] = useState(false)
+  const ferma =(e: { stopPropagation: () => void }) => e.stopPropagation()
 
   return (
     <>
@@ -148,6 +153,22 @@ export function MenuAzioniTask({ t, onApri, className }: { t: Task; onApri?: () 
         <MenuVoce onSeleziona={() => sposta(aggiungiGiorniIso(t.scadenza ?? oggi, 7))}>Una settimana dopo</MenuVoce>
         {t.scadenza && !t.ricorrenza_unita ? <MenuVoce onSeleziona={() => sposta(null)}>Senza scadenza</MenuVoce> : null}
       </SottoMenu>
+      {aperta(t) ? (
+        t.attesa_motivo ? (
+          <>
+            <MenuVoce onSeleziona={() => void azioni.riprendi(t)}>
+              <Play /> Si riparte (non aspetta più)
+            </MenuVoce>
+            <MenuVoce onSeleziona={() => setAttesa(true)}>
+              <Hourglass /> Cambia l&apos;attesa…
+            </MenuVoce>
+          </>
+        ) : (
+          <MenuVoce onSeleziona={() => setAttesa(true)}>
+            <Hourglass /> Metti in attesa…
+          </MenuVoce>
+        )
+      ) : null}
       <MenuSeparatore />
       {sollecitabili.length ? (
         <MenuVoce onSeleziona={() => setSollecito(true)}>
@@ -177,8 +198,8 @@ export function MenuAzioniTask({ t, onApri, className }: { t: Task; onApri?: () 
           <Archive /> Riporta tra le attività
         </MenuVoce>
       ) : (
-        <MenuVoce onSeleziona={() => void azioni.archivia(t)}>
-          <Archive /> Archivia (non si fa più)
+        <MenuVoce onSeleziona={() => setChiusura(true)}>
+          <Archive /> Chiudi senza farla…
         </MenuVoce>
       )}
       {t.eliminata_at ? (
@@ -191,12 +212,12 @@ export function MenuAzioniTask({ t, onApri, className }: { t: Task; onApri?: () 
         </MenuVoce>
       )}
     </Menu>
-    {sollecitabili.length ? (
-      // Il dialogo sta in un portal ma gli eventi React risalgono: non devono arrivare a riga o scheda (apri, trascina).
-      <span className="contents" onClick={ferma} onPointerDown={ferma} onKeyDown={ferma}>
-        <DialogoSollecito t={t} aperto={sollecito} onChiudi={() => setSollecito(false)} />
-      </span>
-    ) : null}
+    {/* I dialoghi stanno in un portal ma gli eventi React risalgono: non devono arrivare a riga o scheda (apri, trascina). */}
+    <span className="contents" onClick={ferma} onPointerDown={ferma} onKeyDown={ferma}>
+      {sollecitabili.length ? <DialogoSollecito t={t} aperto={sollecito} onChiudi={() => setSollecito(false)} /> : null}
+      {attesa ? <DialogoAttesa t={t} aperto onChiudi={() => setAttesa(false)} /> : null}
+      {chiusura ? <DialogoChiusura t={t} aperto onChiudi={() => setChiusura(false)} /> : null}
+    </span>
     </>
   )
 }

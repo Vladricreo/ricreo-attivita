@@ -70,6 +70,10 @@ export function Storico({ t }: { t: Task }) {
         return `l'ha riaperta${suSotto}`
       case "archiviata":
         return `l'ha archiviata${d.motivo ? `: ${d.motivo}` : ""}`
+      case "attesa":
+        return `l'ha messa in attesa: ${d.motivo}${d.ricontrolla ? ` (ricontrollo il ${data(d.ricontrolla)})` : ""}${suSotto}`
+      case "ripresa":
+        return `ha tolto l'attesa: si riparte${suSotto}`
       case "ripristinata":
         return "l'ha riportata tra le attività"
       case "eliminata":

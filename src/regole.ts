@@ -1,4 +1,4 @@
-import type { Persona, Priorita, Stato, Task, TipoStato, UnitaRicorrenza } from "./tipi"
+import type { Esito, Persona, Priorita, Stato, Task, TipoStato, UnitaRicorrenza } from "./tipi"
 
 // --- Date (stringhe ISO yyyy-mm-dd, fuso di Roma) ---------------------------------------------------
 
@@ -169,7 +169,7 @@ export function visibileDa(t: Task): string | null {
 export const fatta = (t: Pick<Task, "stato_tipo">) => t.stato_tipo === "fatto"
 export const aperta = (t: Task) => !fatta(t) && !t.archiviata_at && !t.eliminata_at
 
-export type Fascia = "scadute" | "oggi" | "settimana" | "prossime" | "senza" | "in_arrivo"
+export type Fascia = "scadute" | "oggi" | "settimana" | "prossime" | "senza" | "attesa" | "in_arrivo"
 
 export const FASCE: Record<Fascia, { label: string; testo: string }> = {
   scadute: { label: "Scadute", testo: "text-red-600 dark:text-red-400" },
@@ -177,23 +177,102 @@ export const FASCE: Record<Fascia, { label: string; testo: string }> = {
   settimana: { label: "Prossimi 7 giorni", testo: "text-sky-600 dark:text-sky-400" },
   prossime: { label: "Più avanti", testo: "text-muted-foreground" },
   senza: { label: "Senza scadenza", testo: "text-muted-foreground" },
+  attesa: { label: "In attesa", testo: "text-violet-600 dark:text-violet-400" },
   in_arrivo: { label: "Ricorrenti in arrivo", testo: "text-muted-foreground" },
 }
-export const ORDINE_FASCE: Fascia[] = ["scadute", "oggi", "settimana", "prossime", "senza", "in_arrivo"]
+export const ORDINE_FASCE: Fascia[] = ["scadute", "oggi", "settimana", "prossime", "senza", "attesa", "in_arrivo"]
 
-/** Fascia di un'attività aperta; "in_arrivo" = ricorrente nascosta fino al preavviso. */
+/**
+ * Fascia di un'attività aperta; "in_arrivo" = ricorrente nascosta fino al preavviso; "attesa" = aspetta
+ * qualcosa e non è ancora il giorno di ricontrollarla (se è scaduta resta tra le scadute).
+ */
 export function fascia(t: Task, oggi: string): Fascia {
   const da = visibileDa(t)
   if (da && da > oggi) return "in_arrivo"
-  if (!t.scadenza) return "senza"
+  const parcheggiata = !!t.attesa_motivo && !daRicontrollare(t, oggi)
+  if (!t.scadenza) return parcheggiata ? "attesa" : "senza"
   const g = giorniTraIso(oggi, t.scadenza)
   if (g < 0) return "scadute"
+  if (parcheggiata) return "attesa"
   if (g === 0) return "oggi"
   if (g <= 7) return "settimana"
   return "prossime"
 }
 
 export const scaduta = (t: Task, oggi: string) => !!t.scadenza && t.scadenza < oggi && aperta(t) && fascia(t, oggi) !== "in_arrivo"
+
+// --- In attesa, ferme, carico, esiti -------------------------------------------------------------------
+
+/** Aspetta qualcosa o qualcuno che non dipende da chi la deve fare. */
+export const inAttesa = (t: Task) => !!t.attesa_motivo && aperta(t)
+
+/** In attesa, ed è arrivato (o passato) il giorno in cui tornare a guardarla. */
+export const daRicontrollare = (t: Task, oggi: string) => inAttesa(t) && !!t.ricontrolla_il && t.ricontrolla_il <= oggi
+
+/** In attesa senza un giorno in cui tornarci: rischia di restare lì per sempre. */
+export const attesaSenzaData = (t: Task) => inAttesa(t) && !t.ricontrolla_il
+
+/** Giorni senza movimenti dopo i quali un'attività aperta risulta ferma. */
+export const GIORNI_FERMA = 14
+
+/** Ultimo segno di vita: una modifica, un messaggio o una revisione. */
+export function ultimoMovimento(t: Task): string {
+  let ultimo = t.aggiornato_at
+  for (const x of [t.ultimo_commento_at, t.rivista_at]) if (x && Date.parse(x) > Date.parse(ultimo)) ultimo = x
+  return ultimo
+}
+
+/** Da quanti giorni nessuno la tocca. */
+export function giorniFerma(t: Task, oggi = oggiIso()): number {
+  return Math.max(0, giorniTraIso(giornoRoma(ultimoMovimento(t)), oggi))
+}
+
+/**
+ * Ferma: aperta, non in attesa, nessuno la tocca da GIORNI_FERMA giorni e non è semplicemente
+ * programmata più avanti (senza scadenza, scaduta o in scadenza entro una settimana).
+ */
+export function ferma(t: Task, oggi = oggiIso()): boolean {
+  if (!aperta(t) || t.attesa_motivo || fascia(t, oggi) === "in_arrivo") return false
+  if (t.scadenza && giorniTraIso(oggi, t.scadenza) > 7) return false
+  if (t.data_inizio && t.data_inizio > oggi) return false
+  return giorniFerma(t, oggi) >= GIORNI_FERMA
+}
+
+/** Quante attività in corso tenere al massimo, se la persona non ha scelto un numero. */
+export const LIMITE_IN_CORSO = 5
+
+/** Ci si sta lavorando adesso: stato di tipo «attivo» e non in attesa. */
+export const inCorso = (t: Task) => aperta(t) && t.stato_tipo === "attivo" && !t.attesa_motivo
+
+export type Carico = {
+  aperte: number
+  /** Attività chiuse a settimana, in media, nelle ultime quattro. */
+  ritmo: number
+  /** Settimane per smaltire le aperte a questo ritmo (null = nelle ultime settimane non ne ha chiusa nessuna). */
+  settimane: number | null
+  livello: "ok" | "alto" | "troppo"
+}
+
+/** Confronta quante attività sono aperte con quante se ne chiudono: dice se il carico è sostenibile. */
+export function carico(aperte: number, chiuseInQuattroSettimane: number): Carico {
+  const ritmo = chiuseInQuattroSettimane / 4
+  const settimane = ritmo > 0 ? aperte / ritmo : null
+  const livello = aperte <= 3 ? "ok" : settimane == null || settimane > 8 ? "troppo" : settimane > 4 ? "alto" : "ok"
+  return { aperte, ritmo, settimane, livello }
+}
+
+export const ESITI: Record<Esito, { label: string; descrizione: string; chip: string }> = {
+  annullata: {
+    label: "Non serve più",
+    descrizione: "Non va fatta: è venuto meno il motivo.",
+    chip: "border-border bg-muted/60 text-muted-foreground",
+  },
+  superata: {
+    label: "È cambiata la situazione",
+    descrizione: "La risposta o le condizioni sono diverse da come ci si aspettava: così com'era non ha più senso.",
+    chip: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  },
+}
 
 /** Progresso 0-1 da sottotask e checklist (null se non ce ne sono). */
 export function progresso(t: Task): number | null {

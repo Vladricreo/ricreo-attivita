@@ -8,6 +8,7 @@ export { CampanellaAttivita, RigaNotifica, useNotificheApp } from "./componenti/
 export { DialogoSollecito, PopupSolleciti, useSollecitabili } from "./componenti/solleciti"
 export { AvatarPersona, GruppoAvatar } from "./componenti/persone"
 export { BadgeCategoria } from "./componenti/aspetto"
+export { BadgeAttesa, BadgeEsito, BadgeFerma, DialogoAttesa, DialogoChiusura, RiquadroAttesa, SegnaliTask, testoRicontrollo } from "./componenti/attesa"
 export { creaApi, messaggioErrore, type Api } from "./dati/api"
 export { testoNotifica } from "./testi"
 export * from "./regole"

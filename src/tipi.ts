@@ -9,6 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 export type Priorita = "bassa" | "normale" | "alta" | "urgente"
 export type UnitaRicorrenza = "day" | "week" | "month" | "year"
 export type TipoStato = "aperto" | "attivo" | "revisione" | "bloccato" | "fatto"
+/** Perché un'attività è stata chiusa senza farla: annullata = non serve più, superata = è cambiata la situazione. */
+export type Esito = "annullata" | "superata"
 export type Colore =
   | "slate"
   | "red"
@@ -86,6 +88,19 @@ export type Task = {
   automatizzata_da: string | null
   eliminata_at: string | null
   eliminata_da: string | null
+  /** Cosa o chi si sta aspettando (null = non è in attesa). */
+  attesa_motivo: string | null
+  attesa_dal: string | null
+  attesa_da: string | null
+  /** Giorno in cui tornare a guardarla (solo se è in attesa): non è una scadenza. */
+  ricontrolla_il: string | null
+  /** Perché è stata archiviata senza farla (null = archiviata e basta, o ancora aperta). */
+  esito: Esito | null
+  /** Attività che ha preso il posto di questa. */
+  sostituita_da: string | null
+  /** Ultima volta che qualcuno l'ha riguardata e confermata. */
+  rivista_at: string | null
+  rivista_da: string | null
   assegnatari: Assegnazione[]
   osservatori: string[]
   dipende_da: string[]
@@ -131,6 +146,11 @@ export type ModificaTask = Partial<
     | "archivio_motivo"
     | "automatizzata_da"
     | "eliminata_at"
+    | "attesa_motivo"
+    | "ricontrolla_il"
+    | "esito"
+    | "sostituita_da"
+    | "rivista_at"
   >
 >
 
@@ -216,7 +236,11 @@ export type ManagerPersona = { manager_id: string; persona_id: string }
 export type VistaIniziale = "lista" | "bacheca" | "calendario" | "gantt" | "dashboard"
 
 /** Preferenze della persona, uguali in tutte le app. vista_iniziale null = l'ultima usata in quell'app. */
-export type Preferenze = { vista_iniziale: VistaIniziale | null }
+export type Preferenze = {
+  vista_iniziale: VistaIniziale | null
+  /** Quante attività in corso la persona vuole tenere al massimo (null = LIMITE_IN_CORSO). */
+  limite_in_corso: number | null
+}
 
 export type VoceChecklist = {
   id: string
@@ -292,6 +316,9 @@ export type TipoNotifica =
   | "riaperta"
   | "sollecito"
   | "sollecito_forte"
+  | "attesa"
+  | "ricontrollo"
+  | "chiusa"
 
 export type Notifica = {
   id: string

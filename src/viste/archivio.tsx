@@ -3,6 +3,7 @@
 import { Archive, CircleCheck, RotateCcw, Trash2 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { BadgeCategoria } from "../componenti/aspetto"
+import { BadgeEsito } from "../componenti/attesa"
 import { AvatarPersona } from "../componenti/persone"
 import { useAttivita } from "../contesto"
 import { messaggioErrore } from "../dati/api"
@@ -76,7 +77,7 @@ export function VistaArchivio({ onApri, testo }: { onApri: (t: Task) => void; te
         </div>
         <p className="text-xs text-muted-foreground">
           {sezione === "archiviate"
-            ? "Attività che non si fanno più: restano consultabili e si possono riportare tra quelle da fare."
+            ? "Attività chiuse senza farle, con il motivo: restano consultabili e si possono riportare tra quelle da fare."
             : sezione === "cestino"
               ? "Le attività eliminate restano qui un anno, poi vengono cancellate con foto e messaggi."
               : "Lo storico di quello che è stato fatto."}
@@ -90,6 +91,7 @@ export function VistaArchivio({ onApri, testo }: { onApri: (t: Task) => void; te
               <div className="flex min-w-0 items-center gap-2">
                 <span className={cn("truncate font-medium", sezione === "completate" && "text-muted-foreground")}>{t.titolo}</span>
                 <BadgeCategoria id={t.categoria_id} sottocategoria={t.sottocategoria_id} piccolo className="hidden sm:inline-flex" />
+                {sezione === "archiviate" ? <BadgeEsito t={t} /> : null}
               </div>
               <div className="truncate text-xs text-muted-foreground">
                 {sezione === "archiviate"

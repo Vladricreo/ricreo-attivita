@@ -316,5 +316,46 @@ ok((await chatVis("dario", `chat:${t1}`)) === false && (await chatVis("dario", "
 
 const ces = await q(`select * from tasks.da_eliminare_definitivamente(0)`)
 ok(ces.length >= 0, `cestino da svuotare: ${ces.length}`)
+console.log("In attesa, ricontrollo, esiti e revisione")
+const att = await come("bruno", async () => (await q(`select tasks.crea_task($1) id`, [{ titolo: "Ordinare i ricambi", categoria_id: "inventory", assegnatari: [U.dario] }]))[0].id)
+const rAtt = (await come("dario", () => q(`update tasks.task set attesa_motivo = '  Preventivo del fornitore  ', ricontrolla_il = current_date + 3, attesa_dal = '2000-01-01' where id = $1 returning attesa_motivo, attesa_dal, attesa_da, ricontrolla_il`, [att])))[0]
+ok(rAtt.attesa_motivo === "Preventivo del fornitore" && rAtt.attesa_da === U.dario && new Date(rAtt.attesa_dal).getFullYear() > 2020, "in attesa: motivo pulito, da chi e da quando li decide il database")
+ok((await come("bruno", () => q(`select testo from tasks.notifiche where task_id = $1 and tipo = 'attesa'`, [att])))[0]?.testo === "Preventivo del fornitore", "chi l'ha creata sa che è in attesa")
+ok((await come("dario", () => q(`select 1 from tasks.notifiche where task_id = $1 and tipo = 'attesa'`, [att]))).length === 0, "chi la mette in attesa non si avvisa da solo")
+ok((await come("dario", () => q(`select attesa_motivo, ricontrolla_il from tasks.v_task where id = $1`, [att])))[0].attesa_motivo === "Preventivo del fornitore", "la vista mostra l'attesa")
+ok(!!(await come("dario", () => errore(() => q(`update tasks.task set attesa_motivo = null, ricontrolla_il = current_date where id = $1`, [att])))) === false, "togliere il motivo toglie anche il ricontrollo (niente errore)")
+ok((await q(`select ricontrolla_il, attesa_dal from tasks.task where id = $1`, [att]))[0].ricontrolla_il === null, "… e la data sparisce")
+ok((await q(`select azione from tasks.storico where task_id = $1 and azione in ('attesa', 'ripresa') order by id`, [att])).map((r) => r.azione).join() === "attesa,ripresa", "storico: attesa e ripresa")
+ok((await come("dario", () => q(`update tasks.task set ricontrolla_il = current_date where id = $1 returning ricontrolla_il`, [att])))[0].ricontrolla_il === null, "ricontrollo senza motivo: ignorato")
+
+await come("dario", () => q(`update tasks.task set attesa_motivo = 'Risposta del cliente', ricontrolla_il = current_date - 1 where id = $1`, [att]))
+ok(!!(await come("dario", () => errore(() => q(`select tasks.avvisa_ricontrolli()`)))), "i promemoria li manda solo un job")
+await db.exec(`select set_config('request.jwt.claim.role','service_role',false)`)
+const nRic = (await q(`select tasks.avvisa_ricontrolli() n`))[0].n
+const nRic2 = (await q(`select tasks.avvisa_ricontrolli() n`))[0].n
+await db.exec(`select set_config('request.jwt.claim.role','',false)`)
+ok(nRic === 1 && nRic2 === 0, `promemoria di ricontrollo una volta sola (${nRic}, ${nRic2})`)
+ok((await come("dario", () => q(`select testo from tasks.notifiche where task_id = $1 and tipo = 'ricontrollo'`, [att])))[0]?.testo === "Risposta del cliente", "dario avvisato che è ora di ricontrollare")
+
+await come("dario", () => q(`select tasks.completa($1)`, [att]))
+ok((await q(`select attesa_motivo from tasks.task where id = $1`, [att]))[0].attesa_motivo === null, "completata: non è più in attesa")
+
+const vecchia = await come("bruno", async () => (await q(`select tasks.crea_task($1) id`, [{ titolo: "Stampare 500 volantini", categoria_id: "inventory", assegnatari: [U.dario] }]))[0].id)
+const sostituta = await come("bruno", async () => (await q(`select tasks.crea_task($1) id`, [{ titolo: "Campagna solo online", categoria_id: "inventory" }]))[0].id)
+ok((await come("bruno", () => q(`update tasks.task set esito = 'superata' where id = $1 returning esito`, [vecchia])))[0].esito === null, "esito senza archiviare: ignorato")
+ok(!!(await come("bruno", () => errore(() => q(`update tasks.task set archiviata_at = now(), esito = 'boh' where id = $1`, [vecchia])))), "esito sconosciuto rifiutato")
+ok(!!(await come("bruno", () => errore(() => q(`update tasks.task set archiviata_at = now(), sostituita_da = $1 where id = $1`, [vecchia])))), "non si sostituisce con se stessa")
+await come("bruno", () => q(`update tasks.task set attesa_motivo = 'Ok del cliente' where id = $1`, [vecchia]))
+const ch = (await come("bruno", () => q(`update tasks.task set archiviata_at = now(), esito = 'superata', archivio_motivo = 'Il cliente vuole solo online', sostituita_da = $2 where id = $1 returning esito, sostituita_da, attesa_motivo`, [vecchia, sostituta])))[0]
+ok(ch.esito === "superata" && ch.sostituita_da === sostituta && ch.attesa_motivo === null, "chiusa senza farla: esito, sostituta, e non è più in attesa")
+ok((await come("dario", () => q(`select testo from tasks.notifiche where task_id = $1 and tipo = 'chiusa'`, [vecchia])))[0]?.testo === "Il cliente vuole solo online", "chi doveva farla sa che è stata chiusa e perché")
+const ria = (await come("bruno", () => q(`update tasks.task set archiviata_at = null where id = $1 returning esito, sostituita_da`, [vecchia])))[0]
+ok(ria.esito === null && ria.sostituita_da === null, "riportata tra le attività: esito e sostituta spariscono")
+
+const riv = (await come("dario", () => q(`update tasks.task set rivista_at = '2000-01-01' where id = $1 returning rivista_at, rivista_da`, [vecchia])))[0]
+ok(riv.rivista_da === U.dario && new Date(riv.rivista_at).getFullYear() > 2020, "revisione: data e autore dal database")
+await come("dario", () => q(`insert into tasks.preferenze (user_id, limite_in_corso) values ($1, 4) on conflict (user_id) do update set limite_in_corso = 4`, [U.dario]))
+ok(!!(await come("dario", () => errore(() => q(`update tasks.preferenze set limite_in_corso = 0 where user_id = $1`, [U.dario])))), "limite in corso: almeno 1")
+
 console.log(errori ? `\n${errori} controlli falliti` : "\nTutto ok")
 process.exit(errori ? 1 : 0)

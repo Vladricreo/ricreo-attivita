@@ -25,6 +25,7 @@ import {
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { colore } from "../colori"
 import { BadgeCategoria, ICONE_CATEGORIA, ICONE_STATO, LogoServizio } from "../componenti/aspetto"
+import { DialogoAttesa, DialogoChiusura, RiquadroAttesa } from "../componenti/attesa"
 import { MenuAzioniTask } from "../componenti/azioni-task"
 import { GruppoAvatar, NomiPersone, ScegliPersone } from "../componenti/persone"
 import { DialogoSollecito, useSollecitabili } from "../componenti/solleciti"
@@ -32,6 +33,7 @@ import { SelettoreCategoria, SelettoreData, SelettorePriorita, SelettoreRicorren
 import { useAttivita } from "../contesto"
 import { messaggioErrore } from "../dati/api"
 import {
+  aperta,
   dataBreve,
   dataLunga,
   descriviRicorrenza,
@@ -128,7 +130,9 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
   const seguo = !!me && t.osservatori.includes(me)
   const sollecitabili = useSollecitabili(t)
   const [sollecito, setSollecito] = useState(false)
-  const mia = t.creato_da === me
+  const [inAttesa, setInAttesa] = useState(false)
+  const [chiusura, setChiusura] = useState(false)
+  const mia =t.creato_da === me
   const fattaOra = fatta(t)
   const mioTurno = t.conferma_tutti && t.assegnatari.find((a) => a.user_id === me)
   const st = stato(t.stato_id)
@@ -160,7 +164,7 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
           </>
         ) : null}
       </div>
-      {t.archiviata_at ? <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">Archiviata</span> : null}
+      {t.archiviata_at ? <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">{t.esito ? "Chiusa senza farla" : "Archiviata"}</span> : null}
       {t.eliminata_at ? <span className="rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">Nel cestino</span> : null}
       <Suggerimento testo={seguo ? "Segui: ricevi le notifiche. Clicca per smettere" : "Segui per ricevere le notifiche"}>
         <Bottone variante="fantasma" misura="icona-sm" onClick={() => void azioni.osserva(t, !seguo)} aria-label={seguo ? "Non seguire" : "Segui"}>
@@ -197,11 +201,27 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
       >
         {fattaOra ? "Completata · riapri" : t.ricorrenza_unita ? "Fatta, passa alla prossima" : mioTurno ? "Completa per tutti" : "Segna completata"}
       </Bottone>
+      {aperta(t) && !t.attesa_motivo ? (
+        <Suggerimento testo="Non dipende da te? Scrivi cosa aspetti e quando ricontrollare">
+          <Bottone variante="contorno" misura="sm" onClick={() => setInAttesa(true)}>
+            <Hourglass /> Metti in attesa
+          </Bottone>
+        </Suggerimento>
+      ) : null}
+      {aperta(t) ? (
+        <Suggerimento testo="Non si fa più, o le cose sono andate diversamente">
+          <Bottone variante="fantasma" misura="sm" className="text-muted-foreground" onClick={() => setChiusura(true)}>
+            Chiudi senza farla
+          </Bottone>
+        </Suggerimento>
+      ) : null}
       {t.conferma_tutti && t.assegnatari.length > 1 ? (
         <span className="text-xs text-muted-foreground">
           {t.assegnatari.filter((a) => a.fatto_at).length} di {t.assegnatari.length} hanno fatto la loro parte
         </span>
       ) : null}
+      {inAttesa ? <DialogoAttesa t={t} aperto onChiudi={() => setInAttesa(false)} /> : null}
+      {chiusura ? <DialogoChiusura t={t} aperto onChiudi={() => setChiusura(false)} /> : null}
     </div>
   )
 
@@ -218,6 +238,7 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
           aria-label="Titolo"
         />
         {completa}
+        <RiquadroAttesa t={t} onApri={onApri} />
         {attesa && !fattaOra ? (
           <button
             type="button"

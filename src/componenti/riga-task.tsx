@@ -9,6 +9,7 @@ import { cn } from "../ui/cn"
 import { Popover } from "../ui/popover"
 import { Suggerimento } from "../ui/suggerimento"
 import { BadgeCategoria, BandierinaPriorita, BarraProgresso, LogoServizio, Personale, SpuntaCompleta } from "./aspetto"
+import { SegnaliTask } from "./attesa"
 import { MenuAzioniTask } from "./azioni-task"
 import { GruppoAvatar, ScegliPersone } from "./persone"
 import { SelettoreData, SelettorePriorita } from "./selettori"
@@ -124,9 +125,11 @@ export function RigaTask({
               </Suggerimento>
             ) : null}
             {inAttesa ? <span className="hidden shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground sm:inline">in attesa</span> : null}
+            <SegnaliTask t={t} className="hidden sm:inline-flex" />
           </div>
           {/* Su mobile i dettagli vanno sotto il titolo */}
           <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 sm:hidden">
+            <SegnaliTask t={t} breve />
             {conCategoria ? <BadgeCategoria id={t.categoria_id} sottocategoria={t.sottocategoria_id} piccolo /> : null}
             {scad ? <span className={cn("text-xs", scad.tono)}>{scad.testo}</span> : null}
             <BarraProgresso t={t} conTesto />

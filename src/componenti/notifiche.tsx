@@ -1,6 +1,6 @@
 "use client"
 
-import { AtSign, Bell, BellRing, CircleCheck, Hourglass, ListChecks, Megaphone, MessageSquare, RotateCcw, Shuffle, UserPlus, X, type LucideIcon } from "lucide-react"
+import { Archive, AtSign, Bell, BellRing, CalendarClock, CircleCheck, Hourglass, ListChecks, Megaphone, MessageSquare, RotateCcw, Shuffle, UserPlus, X, type LucideIcon } from "lucide-react"
 import { useMemo } from "react"
 import { colore } from "../colori"
 import { useAttivita, useRichiedi } from "../contesto"
@@ -24,6 +24,9 @@ const ICONE: Record<TipoNotifica, LucideIcon> = {
   riaperta: RotateCcw,
   sollecito: BellRing,
   sollecito_forte: Megaphone,
+  attesa: Hourglass,
+  ricontrollo: CalendarClock,
+  chiusa: Archive,
 }
 
 export function RigaNotifica({ n, onApri, onArchivia, compatta }: { n: Notifica; onApri: () => void; onArchivia?: () => void; compatta?: boolean }) {

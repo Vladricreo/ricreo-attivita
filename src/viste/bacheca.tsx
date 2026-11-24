@@ -22,6 +22,7 @@ import { CalendarDays, MessageSquare, Paperclip, Repeat } from "lucide-react"
 import { useMemo, useRef, useState, type ReactNode } from "react"
 import { colore } from "../colori"
 import { BadgeCategoria, BandierinaPriorita, BarraProgresso, ICONE_STATO, LogoServizio, Personale, SpuntaCompleta } from "../componenti/aspetto"
+import { SegnaliTask } from "../componenti/attesa"
 import { MenuAzioniTask } from "../componenti/azioni-task"
 import { AvatarPersona } from "../componenti/persone"
 import { AggiuntaRapida, CampoPersone, testoScadenza } from "../componenti/riga-task"
@@ -345,6 +346,7 @@ export function Scheda({
           <span className={cn("min-w-0 flex-1 break-words text-sm font-medium leading-snug", fattaOra && "text-muted-foreground line-through")}>{t.titolo}</span>
         </div>
         <BarraProgresso t={t} conTesto />
+        <SegnaliTask t={t} />
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {scad ? (
             <span className={cn("inline-flex items-center gap-1", scad.tono)}>
