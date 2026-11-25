@@ -315,7 +315,7 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
 
         {/* Linea del tempo */}
         <div className="relative shrink-0" style={{ width: larghezzaTotale }}>
-          <div className="sticky top-0 z-10 h-12 border-b border-border bg-muted/40 backdrop-blur">
+          <div className="sticky top-0 z-10 h-12 border-b border-border bg-muted/40 backdrop-blur-sm">
             <div className="relative h-6 border-b border-border/60">
               {intestazione.mesi.map((m) => (
                 <div key={m.etichetta} className="absolute top-0 flex h-6 items-center truncate border-l border-border/60 px-1.5 text-[11px] font-semibold capitalize text-muted-foreground" style={{ left: m.da * w, width: m.n * w }}>
@@ -370,7 +370,7 @@ export function VistaGantt({ filtrate, onApri }: { filtrate: Task[]; onApri: (t:
                         onPointerUp={() => su(t)}
                         onPointerCancel={annulla}
                         className={cn(
-                          "absolute top-1.5 flex cursor-grab select-none [@media(pointer:fine)]:touch-none items-center overflow-hidden rounded-md text-[11px] font-medium text-white shadow-sm active:cursor-grabbing",
+                          "absolute top-1.5 flex cursor-grab select-none [@media(pointer:fine)]:touch-none items-center overflow-hidden rounded-md text-[11px] font-medium text-white shadow-xs active:cursor-grabbing",
                           c.barra,
                           fatta(t) && "opacity-50",
                           r.livello && "top-2.5 h-4",

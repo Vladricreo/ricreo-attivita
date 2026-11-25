@@ -89,7 +89,7 @@ export function VistaImpostazioni() {
                           }
                         }}
                         placeholder="Nuova sottocategoria"
-                        className="h-7 w-40 rounded-md border border-dashed border-border bg-transparent px-2 text-xs outline-none focus:border-input focus:ring-1 focus:ring-ring"
+                        className="h-7 w-40 rounded-md border border-dashed border-border bg-transparent px-2 text-xs outline-hidden focus:border-input focus:ring-1 focus:ring-ring"
                       />
                       <Plus className="h-3.5 w-3.5 text-muted-foreground" />
                     </span>

@@ -311,7 +311,7 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
                 value={filtri.testo}
                 onChange={(e) => setFiltri((f) => ({ ...f, testo: e.target.value }))}
                 placeholder="Cerca per titolo o descrizione…"
-                className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-8 text-sm shadow-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring/40"
+                className="h-9 w-full rounded-lg border border-input bg-background pl-9 pr-8 text-sm shadow-xs outline-hidden placeholder:text-muted-foreground focus:ring-2 focus:ring-ring/40"
               />
               {filtri.testo ? (
                 <button
@@ -415,7 +415,7 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
                           onClick={() => setFiltri((f) => ({ ...f, personali: k }))}
                           className={cn(
                             "h-7 truncate rounded-md px-2 text-xs font-medium transition-colors",
-                            filtri.personali === k ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                            filtri.personali === k ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
                           )}
                         >
                           {l}
@@ -509,7 +509,7 @@ function Interna({ titolo = "Attività", descrizione, azioni: azioniExtra }: { t
           {chipAttivi.length ? (
             <div className="flex flex-wrap items-center gap-1.5">
               {chipAttivi.map((c) => (
-                <span key={c.chiave} className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border border-border bg-card pl-2.5 pr-1 text-xs shadow-sm">
+                <span key={c.chiave} className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border border-border bg-card pl-2.5 pr-1 text-xs shadow-xs">
                   <span className="shrink-0 text-muted-foreground">{c.gruppo}</span>
                   {c.punto ? <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", c.punto)} /> : null}
                   <span className="truncate font-medium">{c.label}</span>

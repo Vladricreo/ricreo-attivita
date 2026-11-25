@@ -183,7 +183,7 @@ export function Chat({ t }: { t: Task }) {
               <Fragment key={c.id}>
                 {nuovoGiorno ? (
                   <div className="sticky top-0 z-10 flex justify-center py-2">
-                    <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] text-muted-foreground shadow-sm">
+                    <span className="rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] text-muted-foreground shadow-xs">
                       {giorno === oggi ? "Oggi" : dataLunga(giorno)}
                     </span>
                   </div>
@@ -313,7 +313,7 @@ function Messaggio({
     )
 
   return (
-    <div tabIndex={-1} className={cn("group flex gap-2 outline-none", mio ? "flex-row-reverse" : "flex-row", raggruppato ? "pt-0.5" : "pt-2")}>
+    <div tabIndex={-1} className={cn("group flex gap-2 outline-hidden", mio ? "flex-row-reverse" : "flex-row", raggruppato ? "pt-0.5" : "pt-2")}>
       <div className="w-7 shrink-0">{!mio && !raggruppato ? <AvatarPersona id={c.autore} misura="md" className="h-7 w-7" /> : null}</div>
       <div className={cn("flex min-w-0 max-w-[85%] flex-col", mio ? "items-end" : "items-start")}>
         {!raggruppato ? (
@@ -371,7 +371,7 @@ function Messaggio({
           {/* Azioni al passaggio del mouse; su touch compaiono toccando il messaggio (che prende il focus) */}
           <div
             className={cn(
-              "absolute -top-3 flex items-center gap-0.5 rounded-full border border-border bg-background p-0.5 opacity-0 shadow-sm transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [&_button]:p-1.5 sm:[&_button]:p-1",
+              "absolute -top-3 flex items-center gap-0.5 rounded-full border border-border bg-background p-0.5 opacity-0 shadow-xs transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 [&_button]:p-1.5 sm:[&_button]:p-1",
               mio ? "left-0 -translate-x-1/2" : "right-0 translate-x-1/2",
             )}
           >
@@ -417,7 +417,7 @@ function Messaggio({
                 onClick={() => onReagisci(emoji)}
                 title={chi.map((id) => (id === me ? "Tu" : (persona(id)?.nome ?? "?"))).join(", ")}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border bg-background px-1.5 py-0.5 text-xs shadow-sm",
+                  "inline-flex items-center gap-1 rounded-full border bg-background px-1.5 py-0.5 text-xs shadow-xs",
                   chi.includes(me ?? "") ? "border-primary/50 bg-primary/10" : "border-border",
                 )}
               >

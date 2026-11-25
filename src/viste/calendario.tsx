@@ -123,7 +123,7 @@ export function VistaCalendario({ filtrate, onApri }: { filtrate: Task[]; onApri
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-start">
-      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-xs">
         {/* Barra */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border px-3 py-3 sm:px-4">
           <div className="min-w-0 flex-1">
@@ -144,7 +144,7 @@ export function VistaCalendario({ filtrate, onApri }: { filtrate: Task[]; onApri
             </p>
           </div>
           <div className="flex w-full flex-wrap items-center gap-1.5 sm:w-auto sm:gap-2">
-            <div className="inline-flex items-center rounded-lg border border-border bg-background shadow-sm">
+            <div className="inline-flex items-center rounded-lg border border-border bg-background shadow-xs">
               <button type="button" onClick={() => naviga(-1)} className="flex h-8 w-8 items-center justify-center rounded-l-lg text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Precedente">
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -167,7 +167,7 @@ export function VistaCalendario({ filtrate, onApri }: { filtrate: Task[]; onApri
                   onClick={() => cambiaModo(x)}
                   className={cn(
                     "h-7 rounded-md px-2 text-xs font-medium capitalize transition-colors sm:px-2.5",
-                    modo === x ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                    modo === x ? "bg-background text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {x}
@@ -258,7 +258,7 @@ export function VistaCalendario({ filtrate, onApri }: { filtrate: Task[]; onApri
       </div>
 
       {senzaAperto ? (
-        <aside className="w-full shrink-0 overflow-hidden rounded-xl border border-border bg-card shadow-sm lg:sticky lg:top-4 lg:w-72">
+        <aside className="w-full shrink-0 overflow-hidden rounded-xl border border-border bg-card shadow-xs lg:sticky lg:top-4 lg:w-72">
           <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
             <Inbox className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-semibold">Senza data</span>
@@ -272,7 +272,7 @@ export function VistaCalendario({ filtrate, onApri }: { filtrate: Task[]; onApri
                 draggable
                 onDragStart={(e) => trascina(e, t.id, null)}
                 onClick={() => onApri(t)}
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2 text-sm shadow-sm transition-colors hover:border-primary/40 hover:bg-accent/40 sm:cursor-grab"
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2 text-sm shadow-xs transition-colors hover:border-primary/40 hover:bg-accent/40 sm:cursor-grab"
               >
                 <span className={cn("h-2 w-2 shrink-0 rounded-full", coloreDi(t).punto)} />
                 <span className="min-w-0 flex-1 truncate">{t.titolo}</span>
@@ -390,7 +390,7 @@ function Settimana({
                 title={quante ? "Tutte le attività del giorno" : undefined}
                 className={cn(
                   "flex h-6 min-w-6 items-center justify-center rounded-full px-1.5 text-xs font-medium tabular-nums",
-                  eOggi ? "bg-primary font-semibold text-primary-foreground shadow-sm" : fuori ? "text-muted-foreground/50" : "text-foreground/80",
+                  eOggi ? "bg-primary font-semibold text-primary-foreground shadow-xs" : fuori ? "text-muted-foreground/50" : "text-foreground/80",
                   quante ? (eOggi ? "hover:bg-primary/90" : "hover:bg-accent") : "cursor-default",
                 )}
               >
@@ -491,7 +491,7 @@ function Barra({
       onClick={() => onApri(v.t)}
       title={v.t.titolo}
       className={cn(
-        "absolute z-10 flex cursor-pointer overflow-hidden border font-medium leading-tight shadow-sm transition-shadow hover:z-20 hover:shadow-md",
+        "absolute z-10 flex cursor-pointer overflow-hidden border font-medium leading-tight shadow-xs transition-shadow hover:z-20 hover:shadow-md",
         misura === "piccola" ? "text-[11px]" : misura === "media" ? "text-xs" : "text-[13px]",
         c.badge,
         continuaPrima ? "rounded-l-none border-l-0" : misura === "grande" ? "rounded-l-lg" : "rounded-l-md",
@@ -637,7 +637,7 @@ function SchedaVoce({ v, oggi, onApri, c }: { v: Voce; oggi: string; onApri: (t:
       type="button"
       onClick={() => onApri(v.t)}
       className={cn(
-        "flex w-full overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm transition-colors hover:bg-accent/40 active:bg-accent/50",
+        "flex w-full overflow-hidden rounded-lg border border-border bg-card text-left shadow-xs transition-colors hover:bg-accent/40 active:bg-accent/50",
         v.fantasma && "border-dashed opacity-60 shadow-none",
       )}
     >
@@ -691,7 +691,7 @@ function CreaQui({ giorno, trigger }: { giorno: string; trigger: ReactNode }) {
           onChange={(e) => setTesto(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void crea()}
           placeholder="Cosa c'è da fare?"
-          className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 text-sm outline-none focus:ring-1 focus:ring-ring"
+          className="h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-2.5 text-sm outline-hidden focus:ring-1 focus:ring-ring"
         />
         <Bottone misura="icona" onClick={() => void crea()} disabled={!testo.trim()} aria-label="Crea">
           <Plus />

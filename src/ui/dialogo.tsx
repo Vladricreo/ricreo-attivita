@@ -34,7 +34,7 @@ export function Dialogo({
         <D.Content
           className={cn(
             // Su mobile sale dal basso a tutta larghezza; da sm in su è centrata.
-            "fixed inset-x-0 bottom-0 mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl border border-b-0 border-border bg-background shadow-xl focus:outline-none sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100vw-1.5rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border-b",
+            "fixed inset-x-0 bottom-0 mx-auto flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl border border-b-0 border-border bg-background shadow-xl focus:outline-hidden sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[calc(100vw-1.5rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-xl sm:border-b",
             bloccante ? "z-[60]" : "z-50",
             className,
           )}
@@ -88,7 +88,7 @@ export function Pannello({
         <D.Overlay className="fixed inset-0 z-50 bg-black/40" />
         <D.Content
           className={cn(
-            "fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full flex-col border-l border-border bg-background shadow-2xl focus:outline-none sm:w-[min(calc(100vw-3rem),76rem)]",
+            "fixed inset-y-0 right-0 z-50 flex h-[100dvh] w-full flex-col border-l border-border bg-background shadow-2xl focus:outline-hidden sm:w-[min(calc(100vw-3rem),76rem)]",
             className,
           )}
           onOpenAutoFocus={(e) => e.preventDefault()}

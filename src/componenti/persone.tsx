@@ -163,7 +163,7 @@ export function ScegliPersone({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Cerca persona…"
-          className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+          className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-2 text-sm outline-hidden focus:ring-1 focus:ring-ring"
         />
       </div>
       <div className="mt-1 max-h-72 overflow-y-auto">

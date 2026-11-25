@@ -7,11 +7,11 @@ type Variante = "primario" | "secondario" | "contorno" | "fantasma" | "distrutti
 type Misura = "sm" | "md" | "icona" | "icona-sm"
 
 const VARIANTI: Record<Variante, string> = {
-  primario: "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90",
+  primario: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90",
   secondario: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-  contorno: "border border-border bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+  contorno: "border border-border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground",
   fantasma: "hover:bg-accent hover:text-accent-foreground",
-  distruttivo: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+  distruttivo: "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90",
   link: "text-primary underline-offset-4 hover:underline",
 }
 
@@ -33,7 +33,7 @@ export const Bottone = forwardRef<HTMLButtonElement, PropsBottone>(function Bott
       ref={ref}
       type={type}
       className={cn(
-        "inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+        "inline-flex shrink-0 items-center justify-center whitespace-nowrap font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
         VARIANTI[variante],
         MISURE[misura],
         className,

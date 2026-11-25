@@ -31,7 +31,7 @@ export function CampoPersone({ t, misura = "sm", max = 3 }: { t: Task; misura?: 
       className="w-72"
       allinea="end"
       trigger={
-        <button type="button" className="flex shrink-0 items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={(e) => e.stopPropagation()} aria-label="Chi la fa">
+        <button type="button" className="flex shrink-0 items-center rounded-full outline-hidden focus-visible:ring-2 focus-visible:ring-ring" onClick={(e) => e.stopPropagation()} aria-label="Chi la fa">
           <GruppoAvatar
             ids={ids}
             max={max}
@@ -90,7 +90,7 @@ export function RigaTask({
           if (e.key === "Enter") onApri(t)
         }}
         className={cn(
-          "group flex min-h-11 cursor-pointer items-center gap-2 border-b border-border/60 px-2 py-1.5 text-sm transition-colors hover:bg-accent/40 focus-visible:bg-accent/50 focus-visible:outline-none sm:px-3",
+          "group flex min-h-11 cursor-pointer items-center gap-2 border-b border-border/60 px-2 py-1.5 text-sm transition-colors hover:bg-accent/40 focus-visible:bg-accent/50 focus-visible:outline-hidden sm:px-3",
           livello > 0 && "bg-muted/20",
         )}
         style={livello ? { paddingLeft: `${livello * 1.75 + 0.5}rem` } : undefined}
@@ -246,7 +246,7 @@ export function AggiuntaRapida({
         }}
         onBlur={() => !testo.trim() && setAttiva(false)}
         placeholder="Scrivi e premi Invio"
-        className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+        className="h-8 min-w-0 flex-1 rounded-md border border-input bg-background px-2 text-sm outline-hidden focus:ring-1 focus:ring-ring"
       />
     </div>
   )

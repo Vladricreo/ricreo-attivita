@@ -73,9 +73,7 @@ memoria con un Supabase finto: permessi, notifiche, sequenze, ricorrenze, cestin
    (con `src/` nell'app: `"./modules/attivita/src/index.ts"` resta relativo alla cartella del tsconfig).
 3. Dipendenze: quelle in `package.json → dipendenzeApp` le deve avere **l'app**. Non fare `bun install`
    nella cartella del modulo (porterebbe un secondo React).
-4. Tailwind:
-   - v4: nel CSS globale `@source "../../modules/attivita/src";` (percorso relativo al file CSS);
-   - v3: in `content` aggiungere `"./modules/attivita/src/**/*.{ts,tsx}"`.
+4. Tailwind (v4): nel CSS globale `@source "../../modules/attivita/src";` (percorso relativo al file CSS).
    Servono i colori shadcn (`background`, `foreground`, `muted`, `primary`, `accent`, `border`, `input`,
    `ring`, `popover`, `card`, `destructive`, `secondary`) e la variante `dark` a classe.
 5. Provider nel layout dell'app (una volta, anche per campanella e "nuova attività" da altre pagine):

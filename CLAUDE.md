@@ -16,8 +16,9 @@ print-farm, product-console, preventivatore). Qui si cambia solo la pagina Attiv
 - La sicurezza sta nella RLS dello schema `tasks`, non nel codice del browser.
 
 ## Compatibilità con le app
-- Tailwind: Finance è ancora v3, le altre v4. Solo classi valide in entrambe (niente `bg-(--x)`,
-  `outline-hidden`, `inset-shadow`, colori `current/…`). Colori dinamici solo dalle mappe in `src/colori.ts`.
+- Tailwind: tutte le app sono v4, quindi nomi v4 (`shadow-xs`, `outline-hidden`, `backdrop-blur-sm`; mai
+  `shadow-sm` per l'ombra leggera né `outline-none`). `rounded` resta senza suffisso: `rounded-sm` nelle app
+  segue `--radius` e non vale 4px. Colori dinamici solo dalle mappe in `src/colori.ts`.
 - Niente import con `@/`: solo percorsi relativi dentro `src/` (ogni app ha alias diversi).
 - Componenti grafici solo da `src/ui/` (le app usano Radix o base-ui, shadcn diversi).
 - Icone lucide: dopo averne aggiunte, `node scripts/controlla-icone.mjs <lucide-react.d.ts delle app>`

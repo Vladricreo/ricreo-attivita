@@ -591,7 +591,7 @@ function CampoDipendenze({ t, onApri }: { t: Task; onApri: (id: string) => void 
         <div className="mb-1.5 text-xs font-medium text-muted-foreground">Questa può partire quando è fatta…</div>
         <div className="relative mb-1">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca attività…" className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-2 text-sm outline-none focus:ring-1 focus:ring-ring" />
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cerca attività…" className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-2 text-sm outline-hidden focus:ring-1 focus:ring-ring" />
         </div>
         <div className="max-h-64 overflow-y-auto">
           {candidati.map((x) => (
@@ -652,7 +652,7 @@ function CampoLink({ t }: { t: Task }) {
           onChange={(e) => setLink(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && salva()}
           placeholder="/pagina o https://…"
-          className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm outline-none focus:ring-1 focus:ring-ring"
+          className="h-8 w-full rounded-md border border-input bg-background px-2 text-sm outline-hidden focus:ring-1 focus:ring-ring"
         />
         {config.pagine?.length ? (
           <div className="mt-2 max-h-40 overflow-y-auto">

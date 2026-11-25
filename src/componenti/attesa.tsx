@@ -111,7 +111,7 @@ function Scelta({ attiva, onClick, children, disabled }: { attiva: boolean; onCl
       aria-pressed={attiva}
       onClick={onClick}
       className={cn(
-        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40",
+        "rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-40",
         attiva ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
       )}
     >
@@ -222,7 +222,7 @@ export function DialogoAttesa({ t, aperto, onChiudi }: { t: Task; aperto: boolea
                 <button
                   type="button"
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                     altra ? "border-primary bg-primary/10 text-primary" : "border-border bg-background text-muted-foreground hover:bg-accent hover:text-foreground",
                   )}
                 >
@@ -320,7 +320,7 @@ export function DialogoChiusura({ t, aperto, onChiudi }: { t: Task; aperto: bool
                 aria-pressed={attivo}
                 onClick={() => setEsito(k)}
                 className={cn(
-                  "flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  "flex flex-col gap-1 rounded-lg border p-3 text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
                   attivo ? "border-primary bg-primary/5" : "border-border hover:bg-accent/50",
                 )}
               >

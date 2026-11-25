@@ -323,7 +323,7 @@ export function Scheda({
       onClick={() => onApri(t)}
       onKeyDown={(e) => e.key === "Enter" && onApri(t)}
       className={cn(
-        "group overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        "group overflow-hidden rounded-lg border border-border bg-card text-left shadow-xs transition-shadow hover:shadow-md focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
         trascinata && "rotate-2 shadow-xl",
       )}
     >

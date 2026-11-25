@@ -79,7 +79,7 @@ export function Sottotask({ t, onApri }: { t: Task; onApri: (t: Task) => void })
           onChange={(e) => setNuova(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void aggiungi()}
           placeholder="Aggiungi una sottotask e premi Invio"
-          className="h-8 min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 text-sm outline-none hover:border-border focus:border-input focus:bg-background focus:ring-1 focus:ring-ring"
+          className="h-8 min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-2 text-sm outline-hidden hover:border-border focus:border-input focus:bg-background focus:ring-1 focus:ring-ring"
         />
       </div>
     </section>

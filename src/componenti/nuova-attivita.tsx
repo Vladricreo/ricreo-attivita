@@ -281,7 +281,7 @@ export function NuovaAttivita({
               }}
               onBlur={aggiungiSotto}
               placeholder="Aggiungi un passo e premi Invio"
-              className="h-8 w-full rounded-md border border-dashed border-border bg-transparent px-2 text-sm outline-none focus:border-input focus:ring-1 focus:ring-ring"
+              className="h-8 w-full rounded-md border border-dashed border-border bg-transparent px-2 text-sm outline-hidden focus:border-input focus:ring-1 focus:ring-ring"
             />
           </div>
           {d.in_sequenza ? <p className="mt-1 text-xs text-muted-foreground">Ognuno riceve &quot;tocca a te&quot; quando il passo prima è fatto. Con più persone su un passo, è fatto quando tutte hanno finito.</p> : null}
@@ -309,9 +309,9 @@ function SceltaVisibilita({ personale, onCambia }: { personale: boolean; onCambi
             aria-checked={scelta}
             onClick={() => onCambia(valore)}
             className={cn(
-              "flex min-h-12 min-w-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              scelta && !valore && "bg-background text-foreground shadow-sm",
-              scelta && valore && "bg-violet-600 text-white shadow-sm",
+              "flex min-h-12 min-w-0 items-center gap-2 rounded-lg px-2.5 py-1.5 text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring",
+              scelta && !valore && "bg-background text-foreground shadow-xs",
+              scelta && valore && "bg-violet-600 text-white shadow-xs",
               !scelta && "text-muted-foreground hover:bg-background/70 hover:text-foreground",
             )}
           >

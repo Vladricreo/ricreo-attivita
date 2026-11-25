@@ -186,7 +186,7 @@ export function Galleria({
       <D.Portal>
         <D.Overlay className="fixed inset-0 z-[60] bg-black/90" />
         <D.Content
-          className="fixed inset-0 z-[60] flex flex-col focus:outline-none"
+          className="fixed inset-0 z-[60] flex flex-col focus:outline-hidden"
           onKeyDown={(e) => {
             if (e.key === "ArrowRight") vai(1)
             if (e.key === "ArrowLeft") vai(-1)
