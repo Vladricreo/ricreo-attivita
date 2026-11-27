@@ -688,7 +688,8 @@ function Compositore({
           onKeyDown={tasto}
           onPaste={incolla}
           placeholder={t.personale ? "Note per te…" : "Scrivi un messaggio…"}
-          className="min-h-9 flex-1 rounded-2xl bg-muted/40 px-3.5"
+          className="min-h-9 rounded-2xl bg-muted/40 px-3.5"
+          classeContenitore="flex-1"
         />
         <button
           type="button"

@@ -229,6 +229,7 @@ function Contenuto({ t, onApri }: { t: Task; onApri: (id: string) => void }) {
     <div className="space-y-6 p-4 sm:p-6">
       <div className="space-y-3">
         <AreaTesto
+          dettatura={false}
           value={titolo}
           righeMax={4}
           onChange={(e) => setTitolo(e.target.value.replace(/\n/g, " "))}

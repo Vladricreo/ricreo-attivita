@@ -2,6 +2,7 @@
 
 import { forwardRef, useLayoutEffect, useRef, type InputHTMLAttributes, type ReactNode, type TextareaHTMLAttributes } from "react"
 import { cn } from "./cn"
+import { PulsanteDettatura, useDettaturaDisponibile } from "./dettatura"
 
 export const Campo = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Campo({ className, ...props }, ref) {
   return (
@@ -16,35 +17,48 @@ export const Campo = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
   )
 })
 
-/** Textarea che cresce col testo (fino a `righeMax`). */
-export const AreaTesto = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<HTMLTextAreaElement> & { righeMax?: number }>(
-  function AreaTesto({ className, righeMax = 12, value, ...props }, ref) {
-    const interno = useRef<HTMLTextAreaElement | null>(null)
-    useLayoutEffect(() => {
-      const el = interno.current
-      if (!el) return
-      el.style.height = "auto"
-      const riga = parseFloat(getComputedStyle(el).lineHeight) || 20
-      el.style.height = `${Math.min(el.scrollHeight + 2, riga * righeMax + 18)}px`
-    }, [value, righeMax])
-    return (
-      <textarea
-        ref={(el) => {
-          interno.current = el
-          if (typeof ref === "function") ref(el)
-          else if (ref) ref.current = el
-        }}
-        value={value}
-        rows={1}
-        className={cn(
-          "flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-          className,
-        )}
-        {...props}
-      />
-    )
-  },
-)
+/**
+ * Textarea che cresce col testo (fino a `righeMax`), con il microfono per dettare in basso a destra.
+ * `dettatura={false}` lo toglie (es. titoli); `classeContenitore` va sul riquadro che lo contiene (es. `flex-1`).
+ */
+export const AreaTesto = forwardRef<
+  HTMLTextAreaElement,
+  TextareaHTMLAttributes<HTMLTextAreaElement> & { righeMax?: number; dettatura?: boolean; classeContenitore?: string }
+>(function AreaTesto({ className, righeMax = 12, value, dettatura = true, classeContenitore, ...props }, ref) {
+  const interno = useRef<HTMLTextAreaElement | null>(null)
+  const conMicrofono = useDettaturaDisponibile() && dettatura && !props.readOnly
+  useLayoutEffect(() => {
+    const el = interno.current
+    if (!el) return
+    el.style.height = "auto"
+    const riga = parseFloat(getComputedStyle(el).lineHeight) || 20
+    el.style.height = `${Math.min(el.scrollHeight + 2, riga * righeMax + 18)}px`
+  }, [value, righeMax])
+  const area = (
+    <textarea
+      ref={(el) => {
+        interno.current = el
+        if (typeof ref === "function") ref(el)
+        else if (ref) ref.current = el
+      }}
+      value={value}
+      rows={1}
+      className={cn(
+        "flex w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+        className,
+        conMicrofono && "pr-9",
+      )}
+      {...props}
+    />
+  )
+  if (!dettatura) return area
+  return (
+    <div className={cn("relative w-full min-w-0", classeContenitore)}>
+      {area}
+      {conMicrofono ? <PulsanteDettatura campo={interno} disabilitato={props.disabled} className="absolute right-1 bottom-1" /> : null}
+    </div>
+  )
+})
 
 export function Etichetta({ children, className, htmlFor }: { children: ReactNode; className?: string; htmlFor?: string }) {
   return (
